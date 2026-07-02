@@ -12,8 +12,8 @@ A simple Supabase-backed CRM for your local website agency.
 6. Run:
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 ## Deploy
@@ -23,7 +23,7 @@ Deploy to Netlify or Cloudflare Pages.
 Build command:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 Publish directory:
