@@ -18,17 +18,10 @@ import { Toast, PageSkeleton } from './components/ui'
 import DashboardView from './features/dashboard/DashboardView'
 import PlaceholderModule from './features/modules/PlaceholderModule'
 import LeadBoard from './features/leads/LeadBoard'
-import LeadFormModal from './features/leads/LeadFormModal'
-import EditLeadModal from './features/leads/EditLeadModal'
-import TeamModal from './features/team/TeamModal'
-import ActivityModal from './features/activities/ActivityModal'
-import BuildDemoModal from './features/demos/BuildDemoModal'
-import DemoManagerModal from './features/demos/DemoManagerModal'
 import TasksView from './features/tasks/TasksView'
-import TaskFormModal, { blankTask } from './features/tasks/TaskFormModal'
+import { blankTask } from './features/tasks/TaskFormModal'
+import AppModals from './features/app/AppModals'
 import ProspectWorkspace from './features/workspace/ProspectWorkspace'
-import NotificationDrawer from './features/notifications/NotificationDrawer'
-import CommandPalette from './features/command/CommandPalette'
 import * as taskService from './features/tasks/taskService'
 import './styles.css'
 
@@ -593,100 +586,108 @@ function App() {
       {!workspaceLead && !showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
 
 
-    <CommandPalette
-      open={showCommandPalette}
-      onClose={()=>setShowCommandPalette(false)}
-      leads={leads}
-      tasks={tasks}
-      notifications={notifications}
-      setNav={setNav}
-      setQuery={setQuery}
-      setStatus={setStatus}
-      setCategory={setCategory}
-      setShowAddModal={setShowAddModal}
-      setShowTaskModal={setShowTaskModal}
-      openDemoManager={openDemoManager}
-      openBuildDemo={openBuildDemo}
-      openActivities={openActivities}
-      startEdit={startEdit}
-    />
-
-    <NotificationDrawer
-      open={showNotifications}
-      notifications={notifications}
-      unreadCount={unreadCount}
-      onClose={()=>setShowNotifications(false)}
-      onMarkRead={markRead}
-      onMarkAllRead={markAllRead}
-      onNavigate={setNav}
-    />
-
-    <LeadFormModal open={showAddModal} form={form} setForm={setForm} onClose={()=>setShowAddModal(false)} addLead={addLead} />
-
-    <TaskFormModal open={showTaskModal} taskForm={taskForm} setTaskForm={setTaskForm} leads={leads} onClose={()=>setShowTaskModal(false)} onSubmit={addTask} saving={taskSaving} />
-
-    <TeamModal
-      open={showTeamModal}
-      activeTeam={activeTeam}
-      currentRole={currentRole}
-      isAdmin={isAdmin}
-      isOwner={isOwner}
-      members={members}
-      session={session}
-      copyInvite={copyInvite}
-      shortUserId={shortUserId}
-      changeMemberRole={changeMemberRole}
-      removeMember={removeMember}
-      onClose={()=>setShowTeamModal(false)}
-    />
-
-    <BuildDemoModal
-      buildLead={buildLead}
-      buildForm={buildForm}
-      setBuildForm={setBuildForm}
-      buildBrief={buildBrief}
-      setBuildBrief={setBuildBrief}
-      generatedSiteCopy={generatedSiteCopy}
-      generatedSiteHtml={generatedSiteHtml}
-      buildSaving={buildSaving}
-      generateDemoBrief={generateDemoBrief}
-      generateTemplateSite={generateTemplateSite}
-      downloadGeneratedHtml={downloadGeneratedHtml}
-      saveBuildDemo={saveBuildDemo}
-      slugify={slugify}
-      onClose={()=>setBuildLead(null)}
-    />
-
-    <DemoManagerModal
-      demoLead={demoLead}
-      demoForm={demoForm}
-      setDemoForm={setDemoForm}
-      demoDirty={demoDirty}
-      demoSaving={demoSaving}
-      saveDemo={saveDemo}
-      requestCloseDemoManager={requestCloseDemoManager}
-      markDemoSent={markDemoSent}
-      markDemoLive={markDemoLive}
-    />
-
-    <ActivityModal
-      activityLead={activityLead}
-      activities={activities}
-      activityForm={activityForm}
-      setActivityForm={setActivityForm}
-      addActivity={addActivity}
-      formatActivityDate={formatActivityDate}
-      deleteActivity={deleteActivity}
-      isAdmin={isAdmin}
-      onClose={()=>setActivityLead(null)}
-    />
-
-    <EditLeadModal
-      editingLead={editingLead}
-      editForm={editForm}
-      setEditForm={setEditForm}
-      onClose={()=>setEditingLead(null)}
-      saveEdit={saveEdit}
+    <AppModals
+      commandPalette={{
+        open: showCommandPalette,
+        onClose: () => setShowCommandPalette(false),
+        leads,
+        tasks,
+        notifications,
+        setNav,
+        setQuery,
+        setStatus,
+        setCategory,
+        setShowAddModal,
+        setShowTaskModal,
+        openDemoManager,
+        openBuildDemo,
+        openActivities,
+        startEdit
+      }}
+      notifications={{
+        open: showNotifications,
+        notifications,
+        unreadCount,
+        onClose: () => setShowNotifications(false),
+        onMarkRead: markRead,
+        onMarkAllRead: markAllRead,
+        onNavigate: setNav
+      }}
+      leadForm={{
+        open: showAddModal,
+        form,
+        setForm,
+        onClose: () => setShowAddModal(false),
+        addLead
+      }}
+      taskForm={{
+        open: showTaskModal,
+        taskForm,
+        setTaskForm,
+        leads,
+        onClose: () => setShowTaskModal(false),
+        onSubmit: addTask,
+        saving: taskSaving
+      }}
+      team={{
+        open: showTeamModal,
+        activeTeam,
+        currentRole,
+        isAdmin,
+        isOwner,
+        members,
+        session,
+        copyInvite,
+        shortUserId,
+        changeMemberRole,
+        removeMember,
+        onClose: () => setShowTeamModal(false)
+      }}
+      buildDemo={{
+        buildLead,
+        buildForm,
+        setBuildForm,
+        buildBrief,
+        setBuildBrief,
+        generatedSiteCopy,
+        generatedSiteHtml,
+        buildSaving,
+        generateDemoBrief,
+        generateTemplateSite,
+        downloadGeneratedHtml,
+        saveBuildDemo,
+        slugify,
+        onClose: () => setBuildLead(null)
+      }}
+      demoManager={{
+        demoLead,
+        demoForm,
+        setDemoForm,
+        demoDirty,
+        demoSaving,
+        saveDemo,
+        requestCloseDemoManager,
+        markDemoSent,
+        markDemoLive
+      }}
+      activity={{
+        activityLead,
+        activities,
+        activityForm,
+        setActivityForm,
+        addActivity,
+        formatActivityDate,
+        deleteActivity,
+        isAdmin,
+        onClose: () => setActivityLead(null)
+      }}
+      editLead={{
+        editingLead,
+        editForm,
+        setEditForm,
+        onClose: () => setEditingLead(null),
+        saveEdit
+      }}
     />
   </AppLayout>
 }
