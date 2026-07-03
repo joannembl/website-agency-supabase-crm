@@ -1,78 +1,174 @@
-import { LayoutDashboard, Users, Monitor, DollarSign, Globe2, ArrowRight, ClipboardList } from 'lucide-react'
-import { Button, Card, CardHeader, EmptyState, PageHeader, StatCard, Badge } from '../../components/ui'
+import {
+  Activity,
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  DollarSign,
+  Globe2,
+  LayoutDashboard,
+  Monitor,
+  Plus,
+  Rocket,
+  Target,
+  Users
+} from 'lucide-react'
+import { Button, Card, CardHeader, EmptyState, StatCard, Badge } from '../../components/ui'
 import { PageLayout, PageStats, PageContent } from '../../layout'
+
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function leadLabel(lead) {
+  return lead?.business_name || lead?.instagram_handle || 'Untitled prospect'
+}
 
 export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineStages, pipelineCounts, setNav }) {
   const won = leads.filter(l => l.status === 'Won').length
-  const ready = leads.filter(l => ['Demo Built','DM Sent','Follow-up','Meeting','Proposal'].includes(l.status)).length
+  const proposalCount = leads.filter(l => ['Proposal', 'Meeting'].includes(l.status)).length
+  const demoLeads = leads.filter(l => ['Demo Built','DM Sent','Follow-up','Meeting','Proposal'].includes(l.status))
+  const noWebsiteLeads = leads.filter(l => ['No website','Likely no/weak site','Social-only candidate'].includes(l.website_status))
   const activePipeline = pipelineStages.filter(stage => !['Won','Lost'].includes(stage))
+  const totalActive = activePipeline.reduce((sum, stage) => sum + (pipelineCounts[stage] || 0), 0)
 
-  return <PageLayout className="dashboardPage saasDashboardPage">
-    <PageHeader
-      eyebrow="Command center"
-      title="Dashboard"
-      description="A clean snapshot of your prospects, demo websites, pipeline movement, and projected recurring revenue."
-      actions={<>
+  const focusItems = [
+    ...noWebsiteLeads.slice(0, 2).map(lead => ({
+      icon: Target,
+      title: `Qualify ${leadLabel(lead)}`,
+      detail: 'High-value no/weak website prospect',
+      action: 'Review prospect',
+      nav: 'Prospects',
+      tone: 'warning'
+    })),
+    ...demoLeads.slice(0, 2).map(lead => ({
+      icon: Monitor,
+      title: `Move ${leadLabel(lead)} forward`,
+      detail: `${lead.status || 'Pipeline'} stage needs next action`,
+      action: 'Open pipeline',
+      nav: 'Pipeline',
+      tone: 'info'
+    }))
+  ].slice(0, 4)
+
+  const demoProgress = leads
+    .filter(l => ['Demo Built','DM Sent','Follow-up','Meeting','Proposal'].includes(l.status) || l.demo_status)
+    .slice(0, 4)
+
+  const recentActivity = leads.slice(0, 5).map((lead, index) => ({
+    label: index === 0 ? 'Prospect updated' : index === 1 ? 'Pipeline checked' : 'Prospect in CRM',
+    detail: leadLabel(lead),
+    time: index === 0 ? 'Just now' : `${index + 1}h ago`
+  }))
+
+  return <PageLayout className="dashboardPage commandDashboardPage">
+    <section className="commandHero">
+      <div>
+        <span className="commandEyebrow">Command center</span>
+        <h1>{getGreeting()}, Jo-anne 👋</h1>
+        <p>Start with the work that creates the most sales momentum today.</p>
+        <div className="commandHeroMeta">
+          <Badge tone="info" dot>{leads.length} prospects</Badge>
+          <Badge tone="purple" dot>{demos} demo opportunities</Badge>
+          <Badge tone="success" dot>{won} won</Badge>
+        </div>
+      </div>
+      <div className="commandHeroActions">
         <Button variant="secondary" icon={Users} onClick={()=>setNav('Prospects')}>Review prospects</Button>
-        <Button icon={LayoutDashboard} onClick={()=>setNav('Pipeline')}>Open pipeline</Button>
-      </>}
-      meta={<>
-        <Badge tone="info" dot>{leads.length} prospects</Badge>
-        <Badge tone="purple" dot>{demos} demo opportunities</Badge>
-        <Badge tone="success" dot>{won} won</Badge>
-      </>}
-    />
+        <Button icon={Plus} onClick={()=>setNav('Prospects')}>Add prospect</Button>
+      </div>
+    </section>
 
-    <PageStats className="dashboardStatsGrid dsStatsGrid">
-      <StatCard label="Total Prospects" value={leads.length} icon={Users} helper="Businesses in your CRM" />
-      <StatCard label="No / Weak Website" value={noWebsite} icon={Globe2} helper="Best demo-first targets" tone="warning" />
-      <StatCard label="Demo Opportunities" value={demos} icon={Monitor} helper="Built, sent, or in progress" tone="info" />
-      <StatCard label="Projected MRR" value={`$${mrr}`} icon={DollarSign} helper="Won clients at current plan" tone="success" />
+    <PageStats className="dashboardStatsGrid commandStatsGrid">
+      <StatCard label="Prospects" value={leads.length} icon={Users} helper="Total leads" />
+      <StatCard label="Demo Sites" value={demos} icon={Monitor} helper="Built, sent, or active" tone="info" />
+      <StatCard label="No / Weak Site" value={noWebsite} icon={Globe2} helper="Best targets" tone="warning" />
+      <StatCard label="Pipeline Value" value={`$${mrr}`} icon={DollarSign} helper="Projected MRR" tone="success" />
+      <StatCard label="Proposal Stage" value={proposalCount} icon={Rocket} helper="Warm opportunities" tone="purple" />
     </PageStats>
 
-    <PageContent className="dashboardGrid saasDashboardGrid">
-      <Card className="dashboardPanel pipelineSnapshotPanel">
-        <CardHeader title="Pipeline snapshot" description="Where prospects are sitting right now." action={<Button variant="ghost" size="sm" onClick={()=>setNav('Pipeline')}>View board <ArrowRight size={15}/></Button>} />
-        <div className="dashboardPipelineBars">
+    <PageContent className="commandDashboardGrid">
+      <Card className="dashboardPanel todaysFocusPanel">
+        <CardHeader
+          title="Today's Focus"
+          description="Prioritized actions based on prospects and demo momentum."
+          action={<Button variant="ghost" size="sm" onClick={()=>setNav('Pipeline')}>View pipeline <ArrowRight size={15}/></Button>}
+        />
+        {focusItems.length ? <div className="focusList">
+          {focusItems.map((item, index) => {
+            const Icon = item.icon
+            return <button type="button" className={`focusItem focusItem--${item.tone}`} key={`${item.title}-${index}`} onClick={()=>setNav(item.nav)}>
+              <div className="focusIndex">{index + 1}</div>
+              <div className="focusIcon"><Icon size={18}/></div>
+              <div className="focusText">
+                <strong>{item.title}</strong>
+                <span>{item.detail}</span>
+              </div>
+              <span className="focusAction">{item.action} <ArrowRight size={15}/></span>
+            </button>
+          })}
+        </div> : <EmptyState icon={CheckCircle2} title="Nothing urgent right now" description="Add prospects or build demos to start filling your daily focus list." />}
+      </Card>
+
+      <Card className="dashboardPanel quickActionsPanel">
+        <CardHeader title="Quick Actions" description="Jump into the work fast." />
+        <div className="quickActionGrid">
+          <button type="button" onClick={()=>setNav('Prospects')}><Plus size={17}/><span>Add prospect</span></button>
+          <button type="button" onClick={()=>setNav('Demo Websites')}><Monitor size={17}/><span>Build demo</span></button>
+          <button type="button" onClick={()=>setNav('Pipeline')}><LayoutDashboard size={17}/><span>Open pipeline</span></button>
+          <button type="button" onClick={()=>setNav('Proposals')}><DollarSign size={17}/><span>Proposal</span></button>
+        </div>
+      </Card>
+
+      <Card className="dashboardPanel pipelineSnapshotPanel commandPipelinePanel">
+        <CardHeader title="Sales Pipeline" description="Where prospects are sitting right now." action={<Button variant="ghost" size="sm" onClick={()=>setNav('Pipeline')}>Board <ArrowRight size={15}/></Button>} />
+        <div className="dashboardPipelineBars commandPipelineBars">
           {activePipeline.map(stage => {
             const count = pipelineCounts[stage] || 0
-            const width = leads.length ? Math.max(6, Math.round((count / leads.length) * 100)) : 0
-            return <div className="pipelineBarRow" key={stage}>
+            const width = totalActive ? Math.max(5, Math.round((count / totalActive) * 100)) : 0
+            return <button type="button" className="pipelineBarRow commandPipelineRow" key={stage} onClick={()=>setNav('Pipeline')}>
               <div className="pipelineBarMeta"><span>{stage}</span><strong>{count}</strong></div>
               <div className="pipelineBarTrack"><span style={{ width: `${width}%` }} /></div>
-            </div>
+            </button>
           })}
         </div>
       </Card>
 
-      <Card className="dashboardPanel nextActionsPanel">
-        <CardHeader title="Next best workflow" description="Start with the action that creates the most sales momentum." />
-        <div className="nextActionList">
-          <button type="button" onClick={()=>setNav('Prospects')}>
-            <Users size={18}/>
-            <span><strong>Qualify prospects</strong><small>Find no-website businesses and add priority notes.</small></span>
-            <ArrowRight size={16}/>
-          </button>
-          <button type="button" onClick={()=>setNav('Demo Websites')}>
-            <Monitor size={18}/>
-            <span><strong>Build or update demos</strong><small>Prepare demo previews before outreach.</small></span>
-            <ArrowRight size={16}/>
-          </button>
-          <button type="button" onClick={()=>setNav('Pipeline')}>
-            <ClipboardList size={18}/>
-            <span><strong>Move the pipeline</strong><small>Drag cards and follow up with warm leads.</small></span>
-            <ArrowRight size={16}/>
-          </button>
-        </div>
+      <Card className="dashboardPanel demoProgressPanel">
+        <CardHeader title="Demo Progress" description="Demo-first opportunities to keep moving." action={<Button variant="ghost" size="sm" onClick={()=>setNav('Demo Websites')}>Demos <ArrowRight size={15}/></Button>} />
+        {demoProgress.length ? <div className="demoProgressList">
+          {demoProgress.map(lead => <button type="button" key={lead.id} onClick={()=>setNav('Demo Websites')}>
+            <div>
+              <strong>{leadLabel(lead)}</strong>
+              <span>{lead.category || 'Website demo'}</span>
+            </div>
+            <Badge tone={lead.status === 'Won' ? 'success' : 'purple'}>{lead.demo_status || lead.status || 'Demo'}</Badge>
+          </button>)}
+        </div> : <EmptyState icon={Monitor} title="No demos in motion" description="Build a demo website for a strong no-website prospect." />}
       </Card>
 
-      <Card className="dashboardPanel dashboardWidePanel">
-        <CardHeader title="Sprint 2 placeholder" description="This space is ready for follow-ups, tasks, and today's priorities next." />
-        <EmptyState
-          icon={LayoutDashboard}
-          title="Daily workflow coming next"
-          description="The shell is now standardized so follow-ups, tasks, and the daily dashboard can plug into a consistent layout."
-        />
+      <Card className="dashboardPanel recentActivityPanel">
+        <CardHeader title="Recent Activity" description="A lightweight pulse of recent CRM movement." />
+        {recentActivity.length ? <div className="activityPreviewList">
+          {recentActivity.map((item, index) => <div className="activityPreviewItem" key={`${item.detail}-${index}`}>
+            <div className="activityPreviewIcon"><Activity size={15}/></div>
+            <div>
+              <strong>{item.label}</strong>
+              <span>{item.detail}</span>
+            </div>
+            <small>{item.time}</small>
+          </div>)}
+        </div> : <EmptyState icon={Clock3} title="No activity yet" description="Activity will appear as you add prospects, build demos, and move the pipeline." />}
+      </Card>
+
+      <Card className="dashboardPanel revenuePanel">
+        <CardHeader title="Revenue Snapshot" description="Track recurring revenue as leads become clients." />
+        <div className="revenueBigNumber">${mrr}</div>
+        <div className="revenueGoalRow"><span>Goal progress</span><strong>{Math.min(100, Math.round((Number(mrr || 0) / 10000) * 100))}%</strong></div>
+        <div className="revenueGoalTrack"><span style={{ width: `${Math.min(100, Math.round((Number(mrr || 0) / 10000) * 100))}%` }} /></div>
+        <p className="revenueHelper">Target: $10,000 MRR</p>
       </Card>
     </PageContent>
   </PageLayout>

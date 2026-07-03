@@ -907,3 +907,309 @@
     flex: 1 1 180px;
   }
 }
+
+/* Dashboard 2.0 - Sprint 2 Phase 1 */
+.commandDashboardPage {
+  display: grid;
+  gap: 22px;
+}
+.commandHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 64%, #eef2ff 100%);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .06);
+}
+.commandEyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.commandHero h1 {
+  color: #0f172a;
+  margin: 0;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+.commandHero p {
+  max-width: 760px;
+  margin: 12px 0 0;
+  color: #53627a;
+  font-size: 17px;
+  line-height: 1.55;
+}
+.commandHeroMeta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.commandHeroActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: max-content;
+}
+.commandStatsGrid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.commandStatsGrid .uiStatCard strong {
+  font-size: 36px;
+  letter-spacing: -.04em;
+}
+.commandStatsGrid .uiStatCard small {
+  color: #64748b;
+}
+.commandDashboardGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .75fr);
+  gap: 18px;
+  align-items: start;
+}
+.todaysFocusPanel,
+.commandPipelinePanel,
+.recentActivityPanel {
+  grid-column: 1;
+}
+.quickActionsPanel,
+.demoProgressPanel,
+.revenuePanel {
+  grid-column: 2;
+}
+.focusList {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.focusItem {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: none;
+  text-align: left;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.focusItem:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .08);
+}
+.focusIndex {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 900;
+  font-size: 13px;
+}
+.focusIcon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+.focusItem--warning .focusIcon { background: #fff7ed; color: #c2410c; }
+.focusItem--info .focusIcon { background: #eef2ff; color: #4f46e5; }
+.focusText {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.focusText strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+.focusText span {
+  color: #64748b;
+  font-size: 13px;
+}
+.focusAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f172a;
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.quickActionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.quickActionGrid button {
+  min-height: 86px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #0f172a;
+  box-shadow: none;
+  font-weight: 900;
+}
+.quickActionGrid button:hover {
+  background: #fff;
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .07);
+}
+.commandPipelineBars {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+.commandPipelineRow {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  text-align: left;
+}
+.commandPipelineRow:hover .pipelineBarTrack span {
+  background: #2563eb;
+}
+.demoProgressList,
+.activityPreviewList {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.demoProgressList button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: none;
+  text-align: left;
+}
+.demoProgressList strong,
+.activityPreviewItem strong {
+  display: block;
+  color: #0f172a;
+  font-size: 14px;
+}
+.demoProgressList span,
+.activityPreviewItem span {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+.activityPreviewItem {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.activityPreviewItem:last-child { border-bottom: 0; }
+.activityPreviewIcon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #475569;
+}
+.activityPreviewItem small {
+  color: #94a3b8;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.revenueBigNumber {
+  margin-top: 14px;
+  color: #0f172a;
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -.05em;
+}
+.revenueGoalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+.revenueGoalRow strong { color: #0f172a; }
+.revenueGoalTrack {
+  height: 10px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+.revenueGoalTrack span {
+  display: block;
+  height: 100%;
+  min-width: 5px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+}
+.revenueHelper {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+@media (max-width: 1180px) {
+  .commandStatsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .commandDashboardGrid { grid-template-columns: 1fr; }
+  .todaysFocusPanel,
+  .commandPipelinePanel,
+  .recentActivityPanel,
+  .quickActionsPanel,
+  .demoProgressPanel,
+  .revenuePanel { grid-column: auto; }
+}
+@media (max-width: 760px) {
+  .commandHero { flex-direction: column; padding: 22px; }
+  .commandHeroActions { width: 100%; justify-content: stretch; }
+  .commandHeroActions button { flex: 1; }
+  .commandStatsGrid { grid-template-columns: 1fr; }
+  .focusItem { grid-template-columns: 34px minmax(0, 1fr); }
+  .focusIcon { display: none; }
+  .focusAction { grid-column: 2; }
+  .quickActionGrid { grid-template-columns: 1fr; }
+}
