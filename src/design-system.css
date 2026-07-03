@@ -557,3 +557,263 @@
     grid-column: auto;
   }
 }
+
+/* Sprint 1: Redesigned Pipeline page */
+.pipelinePage {
+  display: grid;
+  gap: 18px;
+}
+.pipelineStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.pipelineToolbarCard {
+  padding: 14px 16px 0;
+}
+.pipelineToolbarPrimary {
+  flex: 1 1 760px;
+}
+.pipelineToolbarPrimary .uiSearchInput {
+  flex: 1 1 420px;
+}
+.pipelineViewToggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+.pipelineViewToggle button {
+  background: transparent;
+  border: 0;
+  color: #64748b;
+  border-radius: 10px;
+  padding: 8px 11px;
+  font-weight: 900;
+  box-shadow: none;
+}
+.pipelineViewToggle button.active {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .12);
+}
+.pipelineBoardShell {
+  padding: 14px;
+  overflow: hidden;
+}
+.pipelineKanbanBoard {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(290px, 1fr));
+  gap: 14px;
+  overflow-x: auto;
+  padding: 2px 2px 12px;
+  min-height: 560px;
+  scroll-snap-type: x proximity;
+}
+.pipelineColumn {
+  min-width: 290px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 12px;
+  scroll-snap-align: start;
+  transition: border-color .15s ease, background .15s ease;
+}
+.pipelineColumn.dropReady {
+  border-style: dashed;
+  border-color: #94a3b8;
+}
+.pipelineColumnHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 4px 12px;
+}
+.pipelineColumnHeader strong {
+  display: block;
+  color: #0f172a;
+  font-size: .95rem;
+  letter-spacing: -.01em;
+}
+.pipelineColumnHeader small {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: .75rem;
+  font-weight: 700;
+}
+.pipelineColumnHeader span {
+  background: #e2e8f0;
+  color: #334155;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: .75rem;
+  font-weight: 900;
+}
+.pipelineColumnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 450px;
+}
+.pipelineEmptyDrop {
+  min-height: 100px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  color: #94a3b8;
+  font-size: .82rem;
+  font-weight: 800;
+  background: rgba(255,255,255,.55);
+}
+.pipelineLeadCard {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .055);
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease, border-color .15s ease;
+}
+.pipelineLeadCard:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .09);
+}
+.pipelineLeadCard.dragging {
+  opacity: .55;
+  transform: scale(.985);
+}
+.pipelineCardTop {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 9px;
+  align-items: flex-start;
+}
+.pipelineCardIdentity {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+.pipelineAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: #111827;
+  color: #fff;
+  font-weight: 950;
+  font-size: .78rem;
+  letter-spacing: -.03em;
+}
+.pipelineCardIdentity strong {
+  display: block;
+  max-width: 172px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0f172a;
+  font-size: .95rem;
+}
+.pipelineCardIdentity small {
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: .75rem;
+  font-weight: 700;
+}
+.pipelineCardBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pipelineCardDetails {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+.pipelineCardDetails span {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #475569;
+  font-size: .8rem;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pipelineCardNote {
+  margin: 0;
+  color: #334155;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  padding: 10px;
+  font-size: .82rem;
+  line-height: 1.4;
+  max-height: 78px;
+  overflow: hidden;
+}
+.pipelineCardNote.muted {
+  color: #94a3b8;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+.pipelineCardActions {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.pipelineCardActions .uiButton {
+  white-space: nowrap;
+}
+.pipelineQuickActions {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.pipelineQuickActions button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  box-shadow: none;
+}
+.pipelineQuickActions button:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+.pipelineQuickActions button.danger {
+  color: #b91c1c;
+  background: #fff5f5;
+  border-color: #fecaca;
+}
+@media (max-width: 1100px) {
+  .pipelineStatsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .pipelineStatsGrid { grid-template-columns: 1fr; }
+  .pipelineBoardShell { padding: 10px; }
+  .pipelineKanbanBoard { grid-template-columns: repeat(8, 286px); }
+  .pipelineViewToggle, .pipelineViewToggle button { width: 100%; }
+  .pipelineViewToggle button { flex: 1; }
+}

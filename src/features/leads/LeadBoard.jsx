@@ -26,34 +26,67 @@ export default function LeadBoard(props) {
     }} />
   }
 
-  return <>
-    <section className="stats compactStats">
-      <div><span>Total Leads</span><strong>{leads.length}</strong></div>
-      <div><span>No/Weak Website</span><strong>{noWebsite}</strong></div>
-      <div><span>Demos/Pipeline</span><strong>{demos}</strong></div>
-      <div><span>Projected MRR</span><strong>${mrr}</strong></div>
+  return <PipelineView {...{
+    leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory,
+    pipelineStages, viewMode, setView, setShowAddModal, exportCsv, draggingLeadId, setDraggingLeadId,
+    handleDragStart, handleDrop, pipelineCounts, filtered, demoStatusForLead, updateLead,
+    openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin
+  }} />
+}
+
+
+function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, viewMode, setView, setShowAddModal, exportCsv, draggingLeadId, setDraggingLeadId, handleDragStart, handleDrop, pipelineCounts, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+  const activePipelineCount = filtered.filter(l => !['Won','Lost'].includes(l.status || 'Research')).length
+  const readyDemoCount = filtered.filter(l => ['Ready','Demo Ready','Sent','Live'].includes(demoStatusForLead(l))).length
+  const proposalCount = filtered.filter(l => (l.status || '') === 'Proposal').length
+  const wonCount = leads.filter(l => l.status === 'Won').length
+
+  return <main className="pipelinePage">
+    <PageHeader
+      eyebrow="Sales pipeline"
+      title="Pipeline"
+      description="Move prospects from research to demo, proposal, and won. Drag cards between stages or use the quick actions on each card."
+      actions={<>
+        <Button variant="secondary" icon={Download} onClick={exportCsv}>Export CSV</Button>
+        <Button icon={Plus} onClick={()=>setShowAddModal(true)}>Add Prospect</Button>
+      </>}
+      meta={<>
+        <Badge tone="info" dot>{filtered.length} visible</Badge>
+        <Badge tone="purple" dot>{readyDemoCount} demos ready/sent</Badge>
+        <Badge tone="success" dot>{wonCount} won</Badge>
+      </>}
+    />
+
+    <section className="pipelineStatsGrid">
+      <StatCard label="Active Pipeline" value={activePipelineCount} helper="Open prospects" icon={LayoutDashboard} tone="info" />
+      <StatCard label="No/Weak Website" value={noWebsite} helper="Best demo candidates" icon={Globe2} tone="warning" />
+      <StatCard label="Proposals" value={proposalCount} helper="Close-ready leads" icon={BadgeDollarSign} tone="purple" />
+      <StatCard label="Projected MRR" value={`$${mrr}`} helper="$99/mo won leads" icon={BadgeDollarSign} tone="success" />
     </section>
 
-    <main className="fullBoardMain">
-      <section className="card tableWrap fullBoardCard">
-        <div className="toolbar">
-          <div className="search"><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div>
-          <select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select>
-          <select value={category} onChange={e=>setCategory(e.target.value)}>{['All',...leadCategories].map(x=><option key={x}>{x}</option>)}</select>
-          <div className="viewToggle">
-            <button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button>
-            <button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button>
+    <Card className="pipelineToolbarCard">
+      <Toolbar>
+        <ToolbarGroup className="pipelineToolbarPrimary">
+          <SearchInput value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search business, Instagram, category, city..." />
+          <FilterSelect label="Stage" value={status} onChange={e=>setStatus(e.target.value)} options={['All', ...pipelineStages]} />
+          <FilterSelect label="Category" value={category} onChange={e=>setCategory(e.target.value)} options={['All', ...leadCategories]} />
+        </ToolbarGroup>
+        <ToolbarGroup>
+          <div className="pipelineViewToggle" aria-label="Pipeline view mode">
+            <button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={15}/> Board</button>
+            <button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={15}/> Table</button>
           </div>
-          <button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button>
-          <button onClick={exportCsv}><Download size={16}/> CSV</button>
-        </div>
+          <Badge tone="neutral"><Filter size={12}/> {status === 'All' && category === 'All' ? 'No filters' : 'Filtered'}</Badge>
+        </ToolbarGroup>
+      </Toolbar>
+    </Card>
 
-        {viewMode === 'kanban'
-          ? <KanbanView {...{ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }} />
-          : <TableView {...{ filtered, updateLead, pipelineStages, openActivities, openDemoManager, openBuildDemo, startEdit, deleteLead, isAdmin }} />}
-      </section>
-    </main>
-  </>
+    <Card className="pipelineBoardShell">
+      {viewMode === 'kanban'
+        ? <KanbanView {...{ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }} />
+        : <TableView {...{ filtered, updateLead, pipelineStages, openActivities, openDemoManager, openBuildDemo, startEdit, deleteLead, isAdmin }} />}
+    </Card>
+  </main>
 }
 
 function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
@@ -185,29 +218,101 @@ function instagramUrl(handle = '') {
 }
 
 function KanbanView({ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
-  return <div className="kanbanBoard">
-    {pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}>
-      <div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div>
-      <div className="kanbanCards">
-        {filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}>
-          <div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div>
-          <p>{l.instagram_handle || 'No Instagram added'}</p>
-          <div className="kanbanMeta"><span>{l.website_status}</span><span className="demoChip">Demo: {demoStatusForLead(l)}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>
-          {l.notes && <p className="kanbanNotes">{l.notes}</p>}
-          <div className="kanbanActions">
-            <button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button>
-            <button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button>
-            <button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button>
-            <button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button>
-            <button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>
-            {isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}
-            <button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button>
+  return <div className="pipelineKanbanBoard">
+    {pipelineStages.map((stage, stageIndex)=>{
+      const stageLeads = filtered.filter(l => (l.status || 'Research') === stage)
+      return <section className={`pipelineColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}>
+        <div className="pipelineColumnHeader">
+          <div>
+            <strong>{stage}</strong>
+            <small>{stageLeadDescription(stage)}</small>
           </div>
-        </article>)}
-      </div>
-    </section>)}
+          <span>{pipelineCounts[stage] || 0}</span>
+        </div>
+        <div className="pipelineColumnBody">
+          {stageLeads.length === 0 ? <div className="pipelineEmptyDrop">Drop leads here</div> : stageLeads.map(l=><PipelineCard
+            key={l.id}
+            lead={l}
+            stageIndex={stageIndex}
+            pipelineStages={pipelineStages}
+            draggingLeadId={draggingLeadId}
+            setDraggingLeadId={setDraggingLeadId}
+            handleDragStart={handleDragStart}
+            demoStatus={demoStatusForLead(l)}
+            updateLead={updateLead}
+            openDemoManager={openDemoManager}
+            openBuildDemo={openBuildDemo}
+            openActivities={openActivities}
+            startEdit={startEdit}
+            deleteLead={deleteLead}
+            isAdmin={isAdmin}
+          />)}
+        </div>
+      </section>
+    })}
   </div>
 }
+
+function PipelineCard({ lead, stageIndex, pipelineStages, draggingLeadId, setDraggingLeadId, handleDragStart, demoStatus, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+  const stage = lead.status || 'Research'
+  const websiteTone = ['No website','Likely no/weak site','Social-only'].includes(lead.website_status) ? 'warning' : lead.website_status === 'Website found' ? 'success' : 'neutral'
+  const priorityTone = lead.priority === 'A' || lead.priority === 'A+' ? 'success' : lead.priority === 'C' ? 'warning' : 'neutral'
+
+  return <article className={`pipelineLeadCard ${draggingLeadId === lead.id ? 'dragging' : ''}`} draggable onDragStart={e=>handleDragStart(e, lead.id)} onDragEnd={()=>setDraggingLeadId(null)}>
+    <div className="pipelineCardTop">
+      <div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div>
+      <div className="pipelineCardIdentity">
+        <div className="pipelineAvatar">{initials(lead.business_name)}</div>
+        <div>
+          <strong title={lead.business_name}>{lead.business_name || 'Untitled Prospect'}</strong>
+          <small><MapPin size={12}/>{lead.city || 'Phoenix'} · {lead.category || 'Automotive'}</small>
+        </div>
+      </div>
+      <Badge tone={priorityTone}>P{lead.priority || 'B'}</Badge>
+    </div>
+
+    <div className="pipelineCardBadges">
+      <Badge tone={statusTone(stage)} dot>{stage}</Badge>
+      <Badge tone={statusTone(demoStatus)} dot>{demoStatus}</Badge>
+      <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
+    </div>
+
+    <div className="pipelineCardDetails">
+      <span><Camera size={13}/>{lead.instagram_handle || 'No Instagram'}</span>
+      {lead.phone ? <span><Phone size={13}/>{lead.phone}</span> : null}
+      {lead.google_reviews ? <span><Star size={13}/>{lead.google_rating || '—'} · {lead.google_reviews} reviews</span> : null}
+    </div>
+
+    {lead.notes ? <p className="pipelineCardNote">{lead.notes}</p> : <p className="pipelineCardNote muted">No next step logged yet.</p>}
+
+    <div className="pipelineCardActions">
+      <Button size="sm" variant="ghost" disabled={stageIndex === 0} onClick={()=>updateLead(lead.id,{status:pipelineStages[stageIndex-1]})} title="Move back" icon={ChevronLeft}>Back</Button>
+      <div className="pipelineQuickActions">
+        <button type="button" onClick={()=>openDemoManager(lead)} title="Demo website"><Monitor size={15}/></button>
+        <button type="button" onClick={()=>openBuildDemo(lead)} title="Build demo"><Rocket size={15}/></button>
+        <button type="button" onClick={()=>openActivities(lead)} title="Activity"><MessageSquare size={15}/></button>
+        <button type="button" onClick={()=>startEdit(lead)} title="Edit"><Pencil size={15}/></button>
+        {isAdmin ? <button type="button" className="danger" onClick={()=>deleteLead(lead.id)} title="Delete"><Trash2 size={15}/></button> : null}
+      </div>
+      <Button size="sm" variant="ghost" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(lead.id,{status:pipelineStages[stageIndex+1]})} title="Move forward">Next <ChevronRight size={15}/></Button>
+    </div>
+  </article>
+}
+
+function stageLeadDescription(stage) {
+  const descriptions = {
+    Research: 'Need qualifying',
+    'Demo Built': 'Ready to review',
+    'DM Sent': 'Waiting for reply',
+    'Follow-up': 'Needs touchpoint',
+    Meeting: 'Conversation booked',
+    Proposal: 'Quote sent',
+    Won: 'Closed client',
+    Lost: 'Archived'
+  }
+  return descriptions[stage] || 'Pipeline stage'
+}
+
 
 function TableView({ filtered, updateLead, pipelineStages, openActivities, openDemoManager, openBuildDemo, startEdit, deleteLead, isAdmin }) {
   return <table>
