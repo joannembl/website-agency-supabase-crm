@@ -453,3 +453,181 @@
   .demoCardFooter { align-items: stretch; flex-direction: column; }
   .demoCardFooter select { max-width: none; width: 100%; }
 }
+
+/* Sprint 1.5: standardized application layout */
+.standardizedAppShell {
+  grid-template-columns: 264px minmax(0, 1fr);
+  background: #f5f7fb;
+}
+.standardizedWorkspace {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 18px;
+  min-width: 0;
+  padding: 24px;
+}
+.topbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(220px, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  box-shadow: 0 12px 30px rgba(15,23,42,.06);
+  color: #0f172a;
+}
+.topbarTitle span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 900;
+  color: #64748b;
+}
+.topbarTitle h1 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  color: #0f172a;
+  letter-spacing: -.03em;
+}
+.topbarSearch {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  color: #94a3b8;
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 13px;
+}
+.topbarActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+.topbarActions .teamSelect,
+.teamSelect {
+  min-width: 160px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+  padding: 9px 10px;
+  font-weight: 800;
+}
+.topbarIconButton {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.topbarIconButton:hover { background: #f8fafc; color: #0f172a; }
+.topbarUser {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+.topbarUser span {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbarAvatar {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #0f172a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+.pageLayout {
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+}
+.pageLayout > .dsPageHeader,
+.pageLayout > .pageHeader {
+  margin: 0;
+}
+.pageStats {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+.pageToolbar {
+  min-width: 0;
+}
+.pageToolbar > .card,
+.pageToolbar > .dsCard {
+  padding: 16px;
+}
+.pageContent {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+.pageMetaPill {
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 850;
+}
+.breadcrumbs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+}
+.breadcrumbs span + span::before {
+  content: '/';
+  margin-right: 8px;
+  color: #cbd5e1;
+}
+@media (max-width: 1120px) {
+  .topbar {
+    grid-template-columns: minmax(180px, 1fr) auto;
+  }
+  .topbarSearch,
+  .topbarUser { display: none; }
+}
+@media (max-width: 900px) {
+  .standardizedAppShell { grid-template-columns: 1fr; }
+  .standardizedWorkspace { padding: 14px; gap: 14px; }
+  .topbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .topbarActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .topbarActions .teamSelect { min-width: 0; flex: 1 1 180px; }
+}

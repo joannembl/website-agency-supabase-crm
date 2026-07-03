@@ -11,9 +11,7 @@ import * as leadService from './features/leads/leadService'
 import * as demoBuilder from './features/demos/demoBuilder'
 import * as demoService from './features/demos/demoService'
 
-import Sidebar from './layout/Sidebar'
-import WorkspaceHeader from './layout/WorkspaceHeader'
-import TeamBar from './layout/TeamBar'
+import { AppLayout, Sidebar, Topbar, TeamBar } from './layout'
 import DashboardView from './features/dashboard/DashboardView'
 import PlaceholderModule from './features/modules/PlaceholderModule'
 import LeadBoard from './features/leads/LeadBoard'
@@ -434,30 +432,28 @@ function App() {
   const showLeadBoard = ['Prospects','Pipeline','Demo Websites'].includes(activeNav)
   const userEmail = session?.user?.email
 
-  return <div className="appShell">
-    <Sidebar activeNav={activeNav} setNav={setNav} connected={connected} activeTeam={activeTeam} userEmail={userEmail} />
-
-    <div className="workspace">
-      <WorkspaceHeader
-        activeNav={activeNav}
-        connected={connected}
-        userEmail={userEmail}
-        teams={teams}
-        activeTeamId={activeTeamId}
-        setActiveTeamId={setActiveTeamId}
-        loadLeads={loadLeads}
-        signOut={signOut}
-      />
-
-      <TeamBar
-        connected={connected}
-        activeTeam={activeTeam}
-        members={members}
-        currentRole={currentRole}
-        isAdmin={isAdmin}
-        copyInvite={copyInvite}
-        onManageTeam={()=>setShowTeamModal(true)}
-      />
+  return <AppLayout
+    sidebar={<Sidebar activeNav={activeNav} setNav={setNav} connected={connected} activeTeam={activeTeam} userEmail={userEmail} />}
+    topbar={<Topbar
+      activeNav={activeNav}
+      connected={connected}
+      userEmail={userEmail}
+      teams={teams}
+      activeTeamId={activeTeamId}
+      setActiveTeamId={setActiveTeamId}
+      loadLeads={loadLeads}
+      signOut={signOut}
+    />}
+    teambar={<TeamBar
+      connected={connected}
+      activeTeam={activeTeam}
+      members={members}
+      currentRole={currentRole}
+      isAdmin={isAdmin}
+      copyInvite={copyInvite}
+      onManageTeam={()=>setShowTeamModal(true)}
+    />}
+  >
 
       {toast && <div className="toast">{toast}</div>}
       {message && <div className="notice">{message}</div>}
@@ -506,7 +502,6 @@ function App() {
       />}
 
       {!showLeadBoard && activeNav !== 'Dashboard' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
-    </div>
 
     <LeadFormModal open={showAddModal} form={form} setForm={setForm} onClose={()=>setShowAddModal(false)} addLead={addLead} />
 
@@ -573,7 +568,7 @@ function App() {
       onClose={()=>setEditingLead(null)}
       saveEdit={saveEdit}
     />
-  </div>
+  </AppLayout>
 }
 
 export default App

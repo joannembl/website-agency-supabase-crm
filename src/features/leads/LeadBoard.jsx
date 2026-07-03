@@ -11,6 +11,7 @@ import SearchInput from '../../components/ui/SearchInput'
 import StatCard from '../../components/ui/StatCard'
 import { Toolbar, ToolbarGroup } from '../../components/ui/Toolbar'
 import Modal from '../../components/ui/Modal'
+import { PageLayout, PageStats, PageToolbar, PageContent } from '../../layout'
 
 export default function LeadBoard(props) {
   const {
@@ -59,7 +60,7 @@ function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category,
   const [demoFilter, setDemoFilter] = useState('All')
   const visibleDemos = demoLeads.filter(lead => demoFilter === 'All' || demoStatusForLead(lead) === demoFilter || (demoFilter === 'Ready' && ['Ready','Demo Ready'].includes(demoStatusForLead(lead))))
 
-  return <main className="demoWebsitesPage">
+  return <PageLayout className="demoWebsitesPage">
     <PageHeader
       eyebrow="Demo operations"
       title="Demo Websites"
@@ -75,14 +76,14 @@ function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category,
       </>}
     />
 
-    <section className="demoStatsGrid">
+    <PageStats className="demoStatsGrid">
       <StatCard label="Total Demos" value={totalDemos} helper="Active demo projects" icon={Monitor} tone="info" />
       <StatCard label="Building" value={buildingCount} helper="Briefs or templates in progress" icon={Rocket} tone="warning" />
       <StatCard label="Ready / Sent" value={readyCount + sentCount} helper="Ready to pitch or already sent" icon={Sparkles} tone="purple" />
       <StatCard label="Live" value={liveCount} helper="Converted into client sites" icon={Globe2} tone="success" />
-    </section>
+    </PageStats>
 
-    <Card className="demoToolbarCard">
+    <PageToolbar><Card className="demoToolbarCard">
       <Toolbar>
         <ToolbarGroup className="demoToolbarPrimary">
           <SearchInput value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search demos by business, Instagram, category, city..." />
@@ -95,8 +96,9 @@ function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category,
           </div>
         </ToolbarGroup>
       </Toolbar>
-    </Card>
+    </Card></PageToolbar>
 
+    <PageContent>
     {visibleDemos.length === 0 ? <EmptyState icon={Monitor} title="No demo websites found" description="Build or mark a demo for a prospect to start tracking it here." action={<Button icon={Plus} onClick={()=>setShowAddModal(true)}>Add Prospect</Button>} /> :
       <section className="demoWebsiteGrid">
         {visibleDemos.map(lead => <DemoWebsiteCard
@@ -111,7 +113,8 @@ function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category,
           startEdit={startEdit}
         />)}
       </section>}
-  </main>
+    </PageContent>
+  </PageLayout>
 }
 
 function DemoWebsiteCard({ lead, demoStatus, openDemoManager, openBuildDemo, openActivities, updateLead, pipelineStages, startEdit }) {
@@ -178,7 +181,7 @@ function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, s
   const proposalCount = filtered.filter(l => (l.status || '') === 'Proposal').length
   const wonCount = leads.filter(l => l.status === 'Won').length
 
-  return <main className="pipelinePage">
+  return <PageLayout className="pipelinePage">
     <PageHeader
       eyebrow="Sales pipeline"
       title="Pipeline"
@@ -194,14 +197,14 @@ function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, s
       </>}
     />
 
-    <section className="pipelineStatsGrid">
+    <PageStats className="pipelineStatsGrid">
       <StatCard label="Active Pipeline" value={activePipelineCount} helper="Open prospects" icon={LayoutDashboard} tone="info" />
       <StatCard label="No/Weak Website" value={noWebsite} helper="Best demo candidates" icon={Globe2} tone="warning" />
       <StatCard label="Proposals" value={proposalCount} helper="Close-ready leads" icon={BadgeDollarSign} tone="purple" />
       <StatCard label="Projected MRR" value={`$${mrr}`} helper="$99/mo won leads" icon={BadgeDollarSign} tone="success" />
-    </section>
+    </PageStats>
 
-    <Card className="pipelineToolbarCard">
+    <PageToolbar><Card className="pipelineToolbarCard">
       <Toolbar>
         <ToolbarGroup className="pipelineToolbarPrimary">
           <SearchInput value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search business, Instagram, category, city..." />
@@ -216,14 +219,14 @@ function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, s
           <Badge tone="neutral"><Filter size={12}/> {status === 'All' && category === 'All' ? 'No filters' : 'Filtered'}</Badge>
         </ToolbarGroup>
       </Toolbar>
-    </Card>
+    </Card></PageToolbar>
 
-    <Card className="pipelineBoardShell">
+    <PageContent><Card className="pipelineBoardShell">
       {viewMode === 'kanban'
         ? <KanbanView {...{ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }} />
         : <TableView {...{ filtered, updateLead, pipelineStages, openActivities, openDemoManager, openBuildDemo, startEdit, deleteLead, isAdmin }} />}
-    </Card>
-  </main>
+    </Card></PageContent>
+  </PageLayout>
 }
 
 function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
@@ -231,7 +234,7 @@ function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, 
   const socialOnlyCount = leads.filter(l => ['No website','Likely no/weak site','Social-only'].includes(l.website_status)).length
   const highPriorityCount = leads.filter(l => ['A','A+'].includes(l.priority)).length
 
-  return <main className="prospectsPage">
+  return <PageLayout className="prospectsPage">
     <PageHeader
       eyebrow="Lead database"
       title="Prospects"
@@ -247,14 +250,14 @@ function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, 
       </>}
     />
 
-    <section className="prospectStatsGrid">
+    <PageStats className="prospectStatsGrid">
       <StatCard label="Total Prospects" value={leads.length} helper="All team leads" icon={Users} />
       <StatCard label="No/Weak Website" value={noWebsite} helper="Best demo candidates" icon={Globe2} tone="warning" />
       <StatCard label="Demo Pipeline" value={demos} helper="Built, sent, proposal, or won" icon={Sparkles} tone="info" />
       <StatCard label="Projected MRR" value={`$${mrr}`} helper="Based on $99/mo won leads" icon={BadgeDollarSign} tone="success" />
-    </section>
+    </PageStats>
 
-    <Card className="prospectsToolbarCard">
+    <PageToolbar><Card className="prospectsToolbarCard">
       <Toolbar>
         <ToolbarGroup className="prospectsToolbarPrimary">
           <SearchInput value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search business, Instagram, category, city, notes..." />
@@ -266,8 +269,9 @@ function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, 
           <Badge tone="neutral"><Filter size={12}/> Filters active</Badge>
         </ToolbarGroup>
       </Toolbar>
-    </Card>
+    </Card></PageToolbar>
 
+    <PageContent>
     {filtered.length === 0 ? <EmptyState icon={Users} title="No prospects found" description="Try changing your filters or add a new prospect to start building your pipeline." action={<Button icon={Plus} onClick={()=>setShowAddModal(true)}>Add Prospect</Button>} /> :
       <section className="prospectList">
         {filtered.map(lead => <ProspectCard
@@ -284,7 +288,8 @@ function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, 
           isAdmin={isAdmin}
         />)}
       </section>}
-  </main>
+    </PageContent>
+  </PageLayout>
 }
 
 function ProspectCard({ lead, demoStatus, pipelineStages, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
