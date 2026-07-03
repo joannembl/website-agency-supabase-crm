@@ -81,3 +81,11 @@
 }
 .inlineActions { justify-content: flex-end; padding: 0; border-top: 0; }
 @media (max-width: 850px) { .buildDemoGrid { grid-template-columns: 1fr; } .buildDemoPreview textarea { min-height: 360px; } }
+
+.builderTabs { display:flex; gap:8px; margin:12px 0; flex-wrap:wrap; }
+.builderTabs button { border:1px solid rgba(148,163,184,.35); background:rgba(15,23,42,.72); color:#e2e8f0; border-radius:999px; padding:8px 12px; font-weight:800; cursor:pointer; }
+.builderTabs button.active { background:#e2e8f0; color:#0f172a; }
+.generatedCopy, .generatedHtmlBox { margin-top:14px; border:1px solid rgba(148,163,184,.25); background:rgba(15,23,42,.66); border-radius:18px; padding:14px; }
+.generatedCopy h4, .generatedHtmlBox h4 { margin:0 0 8px; }
+.generatedCopy pre { white-space:pre-wrap; max-height:220px; overflow:auto; margin:0; color:#cbd5e1; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace; font-size:.82rem; line-height:1.55; }
+.generatedHtmlBox p { color:#94a3b8; margin:4px 0 12px; }

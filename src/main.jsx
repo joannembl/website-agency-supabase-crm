@@ -117,6 +117,8 @@ function App() {
   const [buildLead, setBuildLead] = useState(null)
   const [buildForm, setBuildForm] = useState({ template: 'Mobile Detailing', style: 'Modern / clean', services: '', photos: '', notes: '' })
   const [buildBrief, setBuildBrief] = useState('')
+  const [generatedSiteCopy, setGeneratedSiteCopy] = useState('')
+  const [generatedSiteHtml, setGeneratedSiteHtml] = useState('')
   const [buildSaving, setBuildSaving] = useState(false)
   const [toast, setToast] = useState('')
 
@@ -169,6 +171,8 @@ function App() {
       notes: ''
     })
     setBuildBrief('')
+    setGeneratedSiteCopy('')
+    setGeneratedSiteHtml('')
   }
 
   function generateDemoBrief(lead = buildLead, source = buildForm) {
@@ -210,18 +214,177 @@ function App() {
     ].join('\n')
   }
 
+  function escapeHtml(value = '') {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;')
+  }
+
+  function slugify(value = '') {
+    return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'demo-site'
+  }
+
+  function servicesList(source = buildForm) {
+    const raw = source.services || ''
+    const parts = raw.split(/\n|,/).map(x => x.trim()).filter(Boolean)
+    if (parts.length) return parts.slice(0, 6)
+    const byTemplate = {
+      'Mobile Detailing': ['Maintenance Wash', 'Interior Detail', 'Full Detail', 'Paint Correction', 'Ceramic Coating'],
+      'Detail Shop': ['Interior Detail', 'Exterior Detail', 'Paint Correction', 'Ceramic Coating', 'Maintenance Plans'],
+      'Tint / PPF': ['Window Tint', 'Paint Protection Film', 'Ceramic Coating', 'Windshield Protection', 'Quote Requests'],
+      'Wrap Shop': ['Color Change Wraps', 'Commercial Graphics', 'Chrome Delete', 'Paint Protection Film', 'Wrap Care'],
+      'Repair Shop': ['Diagnostics', 'Brake Service', 'Oil Change', 'Suspension Repair', 'Preventive Maintenance'],
+      'Mobile Mechanic': ['Mobile Diagnostics', 'Brake Service', 'Battery Service', 'Oil Change', 'Emergency Help'],
+      'Performance Shop': ['Performance Installs', 'Dyno Tuning', 'Maintenance', 'Fabrication', 'Build Consults'],
+      'Automotive Photographer': ['Automotive Shoots', 'Rolling Shots', 'Event Coverage', 'Commercial Content', 'Social Media Packages'],
+      'Wheel Repair': ['Curb Rash Repair', 'Wheel Refinishing', 'Powder Coat', 'Crack Repair', 'Mount & Balance']
+    }
+    return byTemplate[source.template] || ['Services', 'Gallery', 'Reviews', 'Contact']
+  }
+
+  function generateSiteCopy(lead = buildLead, source = buildForm) {
+    if (!lead) return ''
+    const services = servicesList(source)
+    const city = lead.city || 'Phoenix'
+    const name = lead.business_name || 'Your Business'
+    const category = lead.category || source.template
+    const serviceLine = services.slice(0, 3).join(', ')
+    return [
+      `Website copy for ${name}`,
+      ``,
+      `Hero headline: ${category} in ${city}, built around quality work and easy booking.`,
+      `Hero subheadline: Make ${name} look established with a clean, mobile-ready demo site that turns visitors into calls, DMs, and quote requests.`,
+      `Primary CTA: Request a Quote`,
+      `Secondary CTA: View Services`,
+      ``,
+      `Services section intro: Whether customers need ${serviceLine}, this page makes the offer clear without forcing them to DM for every detail.`,
+      ...services.map((item, index) => `${index + 1}. ${item} — Clear service card with short benefit-driven copy.`),
+      ``,
+      `Trust section: Feature Google rating, review count, service area, fast response time, and real customer photos once available.`,
+      `Gallery section: Use placeholder automotive visuals now, then replace with the owner’s best Instagram photos.`,
+      `Contact section: Encourage visitors to call, text, DM, or submit a simple quote form.`,
+      `Footer disclaimer: Preview website created for ${name}. Images/content may be placeholders. Not yet live.`
+    ].join('\n')
+  }
+
+  function generateSiteHtml(lead = buildLead, source = buildForm) {
+    if (!lead) return ''
+    const name = escapeHtml(lead.business_name || 'Demo Business')
+    const city = escapeHtml(lead.city || 'Phoenix')
+    const category = escapeHtml(lead.category || source.template || 'Automotive Business')
+    const style = source.style || 'Modern / clean'
+    const services = servicesList(source)
+    const rating = lead.google_rating ? `${lead.google_rating}★` : '5-star quality'
+    const reviews = lead.google_reviews ? `${lead.google_reviews} Google reviews` : 'trusted local service'
+    const instagram = lead.instagram_handle ? `https://instagram.com/${lead.instagram_handle.replace('@','')}` : '#'
+    const serviceCards = services.map(service => `<article class="card"><h3>${escapeHtml(service)}</h3><p>Clear package details, benefits, and a simple call-to-action so customers know exactly what to do next.</p></article>`).join('\n        ')
+    return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${name} | ${category} in ${city}</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --text:#f8fafc; --muted:#94a3b8; --line:#243244; --accent:#38bdf8; --accent2:#f97316; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:linear-gradient(135deg,#05070a,#101827 52%,#111827); color:var(--text); }
+    a { color:inherit; text-decoration:none; }
+    .wrap { width:min(1120px,92vw); margin:auto; }
+    header { padding:22px 0; border-bottom:1px solid rgba(255,255,255,.08); position:sticky; top:0; backdrop-filter: blur(16px); background:rgba(11,15,20,.78); }
+    nav { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .brand { font-weight:900; letter-spacing:-.03em; font-size:1.1rem; }
+    .navlinks { display:flex; gap:18px; color:var(--muted); font-size:.92rem; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; padding:13px 18px; border-radius:999px; background:var(--accent); color:#041016; font-weight:800; }
+    .btn.secondary { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.18); }
+    .hero { padding:90px 0 70px; display:grid; grid-template-columns:1.12fr .88fr; gap:36px; align-items:center; }
+    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-size:.78rem; font-weight:800; }
+    h1 { font-size:clamp(2.4rem,6vw,5.4rem); line-height:.9; letter-spacing:-.07em; margin:14px 0 18px; }
+    .lead { color:var(--muted); font-size:1.15rem; line-height:1.7; max-width:62ch; }
+    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:28px; }
+    .heroCard { background:rgba(17,24,39,.84); border:1px solid rgba(255,255,255,.1); border-radius:28px; padding:24px; box-shadow:0 24px 80px rgba(0,0,0,.36); }
+    .photo { height:330px; border-radius:22px; background:linear-gradient(135deg,rgba(56,189,248,.35),rgba(249,115,22,.22)), url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80') center/cover; }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; }
+    .stat { background:rgba(255,255,255,.06); padding:14px; border-radius:18px; border:1px solid rgba(255,255,255,.08); }
+    .stat strong { display:block; font-size:1.25rem; }
+    section { padding:58px 0; }
+    .sectionHead { display:flex; justify-content:space-between; gap:24px; align-items:end; margin-bottom:24px; }
+    h2 { font-size:clamp(1.8rem,3vw,3rem); margin:0; letter-spacing:-.05em; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .card { background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1); border-radius:22px; padding:22px; }
+    .card h3 { margin:0 0 10px; }
+    .card p, .muted { color:var(--muted); line-height:1.65; }
+    .gallery { display:grid; grid-template-columns:1.2fr .8fr .8fr; gap:14px; }
+    .tile { min-height:220px; border-radius:22px; background:linear-gradient(135deg,rgba(56,189,248,.25),rgba(15,23,42,.5)), url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=80') center/cover; border:1px solid rgba(255,255,255,.1); }
+    .tile:nth-child(2){ background-image:linear-gradient(135deg,rgba(249,115,22,.24),rgba(15,23,42,.55)), url('https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1000&q=80'); }
+    .tile:nth-child(3){ background-image:linear-gradient(135deg,rgba(56,189,248,.18),rgba(15,23,42,.62)), url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1000&q=80'); }
+    .contact { background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(249,115,22,.1)); border:1px solid rgba(255,255,255,.1); border-radius:30px; padding:34px; display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center; }
+    footer { color:var(--muted); border-top:1px solid rgba(255,255,255,.08); padding:24px 0; font-size:.9rem; }
+    @media (max-width: 820px){ .hero,.contact{grid-template-columns:1fr}.grid,.gallery{grid-template-columns:1fr}.navlinks{display:none}.stats{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header><div class="wrap"><nav><div class="brand">${name}</div><div class="navlinks"><a href="#services">Services</a><a href="#gallery">Gallery</a><a href="#contact">Contact</a></div><a class="btn" href="#contact">Request Quote</a></nav></div></header>
+  <main>
+    <div class="wrap hero">
+      <div>
+        <div class="eyebrow">${category} · ${city}</div>
+        <h1>${name} makes it easy to book quality automotive work.</h1>
+        <p class="lead">A clean demo website built to help customers understand the services, trust the business, and reach out without hunting through social media DMs.</p>
+        <div class="actions"><a class="btn" href="#contact">Request a Quote</a><a class="btn secondary" href="#services">View Services</a></div>
+      </div>
+      <aside class="heroCard"><div class="photo"></div><div class="stats"><div class="stat"><strong>${escapeHtml(rating)}</strong><span>${escapeHtml(reviews)}</span></div><div class="stat"><strong>${city}</strong><span>Service Area</span></div><div class="stat"><strong>${escapeHtml(style)}</strong><span>Demo Style</span></div></div></aside>
+    </div>
+    <section id="services"><div class="wrap"><div class="sectionHead"><div><div class="eyebrow">Services</div><h2>Clear offers, fewer missed leads.</h2></div><p class="muted">Service cards can be customized with pricing, package details, and booking buttons.</p></div><div class="grid">
+        ${serviceCards}
+      </div></div></section>
+    <section id="gallery"><div class="wrap"><div class="sectionHead"><div><div class="eyebrow">Gallery</div><h2>Built for before-and-after proof.</h2></div><p class="muted">Replace these placeholders with Instagram photos or client-provided images.</p></div><div class="gallery"><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div></section>
+    <section><div class="wrap"><div class="grid"><div class="card"><h3>Fast response</h3><p>Make phone, text, and quote requests obvious from every page.</p></div><div class="card"><h3>Mobile-ready</h3><p>Most local automotive leads browse from their phone. This layout is built for that.</p></div><div class="card"><h3>Trust-focused</h3><p>Show reviews, photos, location, and service details in one polished place.</p></div></div></div></section>
+    <section id="contact"><div class="wrap"><div class="contact"><div><div class="eyebrow">Ready to book?</div><h2>Request a quote from ${name}.</h2><p class="muted">Call, text, DM, or use this form area to capture leads from the website.</p></div><div class="actions"><a class="btn" href="tel:${escapeHtml(lead.phone || '')}">Call Now</a><a class="btn secondary" href="${escapeHtml(instagram)}">Instagram</a></div></div></div></section>
+  </main>
+  <footer><div class="wrap">Preview website created for ${name}. Images and copy are placeholders. Not yet live.</div></footer>
+</body>
+</html>`
+  }
+
+  function generateTemplateSite() {
+    const copy = generateSiteCopy(buildLead, buildForm)
+    const html = generateSiteHtml(buildLead, buildForm)
+    setGeneratedSiteCopy(copy)
+    setGeneratedSiteHtml(html)
+    setBuildBrief([generateDemoBrief(buildLead, buildForm), '', '--- GENERATED WEBSITE COPY ---', copy, '', '--- GENERATED INDEX.HTML CREATED ---', `Filename: ${slugify(buildLead?.business_name)}-index.html`].join('\n'))
+    showToast('Template site generated')
+  }
+
+  function downloadGeneratedHtml() {
+    const html = generatedSiteHtml || generateSiteHtml(buildLead, buildForm)
+    if (!html) return
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${slugify(buildLead?.business_name)}-index.html`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   async function saveBuildDemo(e) {
     e?.preventDefault?.()
     if (!buildLead?.id || buildSaving) return
     setBuildSaving(true)
     setMessage('')
     const brief = buildBrief || generateDemoBrief(buildLead, buildForm)
+    const htmlNote = generatedSiteHtml ? `\n\nGenerated file: ${slugify(buildLead?.business_name)}-index.html\nUse the Download index.html button in Build Demo V2 before closing if you want the static file.` : ''
     const payload = {
       lead_id: buildLead.id,
       demo_status: 'Building',
       hosting_provider: 'Netlify',
       deploy_status: 'Brief generated — ready to build',
-      preview_note: brief,
+      preview_note: `${brief}${htmlNote}`,
       feedback: buildForm.notes || null,
       built: false
     }
@@ -245,6 +408,8 @@ function App() {
       await logDemoActivity(buildLead, 'Build demo website brief created and demo status changed to Building.')
       setBuildLead(null)
       setBuildBrief('')
+      setGeneratedSiteCopy('')
+      setGeneratedSiteHtml('')
       setView('kanban')
       await loadLeads(activeTeamId)
       showToast('Build demo brief saved')
@@ -755,13 +920,13 @@ function App() {
     {buildLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setBuildLead(null) }}>
       <form className="editModal buildDemoModal" onSubmit={saveBuildDemo}>
         <div className="modalHeader">
-          <div><span className="eyebrow">V1 guided builder</span><h2>Build Demo Website</h2><p>{buildLead.business_name}</p></div>
+          <div><span className="eyebrow">V2 template generator</span><h2>Build Demo Website</h2><p>{buildLead.business_name}</p></div>
           <button type="button" className="iconBtn" onClick={()=>setBuildLead(null)}><X size={18}/></button>
         </div>
         <div className="buildDemoGrid">
           <section className="buildDemoForm">
             <h3>Demo inputs</h3>
-            <p>Use this to turn a prospect into a clear website brief before you build the actual demo.</p>
+            <p>Choose a niche template, generate the page copy, and download a starter index.html for the demo site.</p>
             <label>Template
               <select value={buildForm.template} onChange={e=>setBuildForm({...buildForm, template:e.target.value})}>{['Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select>
             </label>
@@ -779,13 +944,21 @@ function App() {
             </label>
             <div className="modalActions inlineActions">
               <button type="button" className="secondaryBtn" onClick={()=>setBuildBrief(generateDemoBrief())}><Rocket size={16}/> Generate brief</button>
+              <button type="button" className="secondaryBtn" onClick={generateTemplateSite}><Monitor size={16}/> Generate site</button>
+              <button type="button" className="secondaryBtn" onClick={downloadGeneratedHtml} disabled={!buildLead}><Download size={16}/> Download index.html</button>
               <button type="submit" disabled={buildSaving}><Save size={16}/> {buildSaving ? 'Saving...' : 'Save as Building'}</button>
             </div>
           </section>
           <aside className="buildDemoPreview">
-            <h3>Generated website brief</h3>
-            <p>This gets saved into the Demo Manager preview notes.</p>
+            <h3>Generated output</h3>
+            <p>The brief and generated copy save to Demo Manager. Download exports the static starter file.</p>
+            <div className="builderTabs">
+              <button type="button" className="active">Brief</button>
+              <button type="button" onClick={generateTemplateSite}>Refresh generated site</button>
+            </div>
             <textarea value={buildBrief || generateDemoBrief()} onChange={e=>setBuildBrief(e.target.value)}></textarea>
+            {generatedSiteCopy && <div className="generatedCopy"><h4>Homepage copy generated</h4><pre>{generatedSiteCopy}</pre></div>}
+            {generatedSiteHtml && <div className="generatedHtmlBox"><h4>Starter index.html ready</h4><p>{slugify(buildLead?.business_name)}-index.html</p><button type="button" className="secondaryBtn" onClick={downloadGeneratedHtml}><Download size={16}/> Download HTML</button></div>}
           </aside>
         </div>
       </form>
