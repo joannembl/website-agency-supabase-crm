@@ -3,6 +3,13 @@ import { supabase } from './supabase'
 import AuthScreen from './components/AuthScreen'
 import TeamSetup from './components/TeamSetup'
 import { blankDemo, blankLead, pipelineStages } from './constants'
+import useAuthSession from './hooks/useAuthSession'
+import useTeams from './hooks/useTeams'
+import useLeads from './hooks/useLeads'
+import useActivities from './hooks/useActivities'
+import * as leadService from './features/leads/leadService'
+import * as demoBuilder from './features/demos/demoBuilder'
+import * as demoService from './features/demos/demoService'
 
 import Sidebar from './layout/Sidebar'
 import WorkspaceHeader from './layout/WorkspaceHeader'
@@ -19,27 +26,29 @@ import DemoManagerModal from './features/demos/DemoManagerModal'
 import './styles.css'
 
 function App() {
-  const [session, setSession] = useState(null)
-  const [authReady, setAuthReady] = useState(false)
-  const [teams, setTeams] = useState([])
-  const [activeTeamId, setActiveTeamId] = useState(localStorage.getItem('active_team_id') || '')
-  const [members, setMembers] = useState([])
+  const [message, setMessage] = useState('')
+  const { session, setSession, authReady, signOut: authSignOut } = useAuthSession()
+  const {
+    teams, setTeams, activeTeamId, setActiveTeamId, members, activeTeam,
+    currentRole, isOwner, isAdmin, loadMembers, copyInvite, shortUserId,
+    changeMemberRole, removeMember
+  } = useTeams(session, setMessage)
+  const { leads, setLeads, loadLeads, addLead: createLeadRecord, updateLead, deleteLead: removeLeadRecord } = useLeads({ session, activeTeamId, setMessage })
+  const {
+    activityLead, setActivityLead, activities, activityForm, setActivityForm,
+    openActivities, addActivity, deleteActivity, formatActivityDate
+  } = useActivities({ session, activeTeamId, setMessage })
   const [showTeamModal, setShowTeamModal] = useState(false)
-  const [leads, setLeads] = useState([])
   const [form, setForm] = useState(blankLead)
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('All')
   const [category, setCategory] = useState('All')
-  const [message, setMessage] = useState('')
   const [editingLead, setEditingLead] = useState(null)
   const [editForm, setEditForm] = useState(blankLead)
   const [viewMode, setViewMode] = useState(localStorage.getItem('crm_view_mode') || 'kanban')
   const [activeNav, setActiveNav] = useState(localStorage.getItem('crm_active_nav') || 'Dashboard')
   const [showAddModal, setShowAddModal] = useState(false)
   const [draggingLeadId, setDraggingLeadId] = useState(null)
-  const [activityLead, setActivityLead] = useState(null)
-  const [activities, setActivities] = useState([])
-  const [activityForm, setActivityForm] = useState({ activity_type: 'DM', body: '' })
   const [demoLead, setDemoLead] = useState(null)
   const [demoRecord, setDemoRecord] = useState(null)
   const [demoForm, setDemoForm] = useState(blankDemo)
@@ -54,24 +63,7 @@ function App() {
   const [toast, setToast] = useState('')
 
   const connected = Boolean(supabase)
-  const activeTeam = teams.find(t => t.id === activeTeamId)
-  const currentMember = members.find(m => m.user_id === session?.user?.id)
-  const currentRole = currentMember?.role || 'member'
-  const isOwner = currentRole === 'owner'
-  const isAdmin = currentRole === 'owner' || currentRole === 'admin'
-
-  function normalizeDemoForm(source = {}) {
-    return {
-      demo_url: source.demo_url || '',
-      live_url: source.live_url || '',
-      github_repo: source.github_repo || '',
-      hosting_provider: source.hosting_provider || 'Netlify',
-      demo_status: source.demo_status || 'Not Started',
-      deploy_status: source.deploy_status || '',
-      preview_note: source.preview_note || '',
-      feedback: source.feedback || ''
-    }
-  }
+  const normalizeDemoForm = demoBuilder.normalizeDemoForm
 
   const demoDirty = JSON.stringify(normalizeDemoForm(demoForm)) !== JSON.stringify(normalizeDemoForm(demoInitialForm))
 
@@ -105,179 +97,10 @@ function App() {
     setGeneratedSiteHtml('')
   }
 
-  function generateDemoBrief(lead = buildLead, source = buildForm) {
-    if (!lead) return ''
-    const services = source.services?.trim() || 'Add the main services/packages for this business.'
-    const photos = source.photos?.trim() || 'Use placeholder automotive/detailing imagery until client photos are provided.'
-    const notes = source.notes?.trim() || 'Create a simple demo-first landing page that makes the business look established and easy to contact.'
-    return [
-      `Demo website brief for ${lead.business_name}`,
-      ``,
-      `Business type: ${lead.category || source.template}`,
-      `City/market: ${lead.city || 'Phoenix'}`,
-      `Instagram: ${lead.instagram_handle || 'Not added'}`,
-      `Website status: ${lead.website_status || 'Needs verification'}`,
-      `Google rating/reviews: ${lead.google_rating || 'N/A'} (${lead.google_reviews || 0} reviews)`,
-      ``,
-      `Template: ${source.template}`,
-      `Visual style: ${source.style}`,
-      ``,
-      `Recommended sections:`,
-      `1. Hero section with clear headline, service area, and call-to-action`,
-      `2. Services/packages section`,
-      `3. Before/after or portfolio gallery`,
-      `4. Why choose us / trust section`,
-      `5. Google reviews/testimonials`,
-      `6. Contact form and call/text buttons`,
-      `7. Footer with Instagram, phone, service area, and preview disclaimer`,
-      ``,
-      `Services to feature:`,
-      services,
-      ``,
-      `Photo/content notes:`,
-      photos,
-      ``,
-      `Build notes:`,
-      notes,
-      ``,
-      `Next step: Build the demo, save the preview URL in Demo Manager, then move this prospect to Demo Built.`
-    ].join('\n')
-  }
-
-  function escapeHtml(value = '') {
-    return String(value)
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;')
-  }
-
-  function slugify(value = '') {
-    return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'demo-site'
-  }
-
-  function servicesList(source = buildForm) {
-    const raw = source.services || ''
-    const parts = raw.split(/\n|,/).map(x => x.trim()).filter(Boolean)
-    if (parts.length) return parts.slice(0, 6)
-    const byTemplate = {
-      'Mobile Detailing': ['Maintenance Wash', 'Interior Detail', 'Full Detail', 'Paint Correction', 'Ceramic Coating'],
-      'Detail Shop': ['Interior Detail', 'Exterior Detail', 'Paint Correction', 'Ceramic Coating', 'Maintenance Plans'],
-      'Tint / PPF': ['Window Tint', 'Paint Protection Film', 'Ceramic Coating', 'Windshield Protection', 'Quote Requests'],
-      'Wrap Shop': ['Color Change Wraps', 'Commercial Graphics', 'Chrome Delete', 'Paint Protection Film', 'Wrap Care'],
-      'Repair Shop': ['Diagnostics', 'Brake Service', 'Oil Change', 'Suspension Repair', 'Preventive Maintenance'],
-      'Mobile Mechanic': ['Mobile Diagnostics', 'Brake Service', 'Battery Service', 'Oil Change', 'Emergency Help'],
-      'Performance Shop': ['Performance Installs', 'Dyno Tuning', 'Maintenance', 'Fabrication', 'Build Consults'],
-      'Automotive Photographer': ['Automotive Shoots', 'Rolling Shots', 'Event Coverage', 'Commercial Content', 'Social Media Packages'],
-      'Wheel Repair': ['Curb Rash Repair', 'Wheel Refinishing', 'Powder Coat', 'Crack Repair', 'Mount & Balance']
-    }
-    return byTemplate[source.template] || ['Services', 'Gallery', 'Reviews', 'Contact']
-  }
-
-  function generateSiteCopy(lead = buildLead, source = buildForm) {
-    if (!lead) return ''
-    const services = servicesList(source)
-    const city = lead.city || 'Phoenix'
-    const name = lead.business_name || 'Your Business'
-    const category = lead.category || source.template
-    const serviceLine = services.slice(0, 3).join(', ')
-    return [
-      `Website copy for ${name}`,
-      ``,
-      `Hero headline: ${category} in ${city}, built around quality work and easy booking.`,
-      `Hero subheadline: Make ${name} look established with a clean, mobile-ready demo site that turns visitors into calls, DMs, and quote requests.`,
-      `Primary CTA: Request a Quote`,
-      `Secondary CTA: View Services`,
-      ``,
-      `Services section intro: Whether customers need ${serviceLine}, this page makes the offer clear without forcing them to DM for every detail.`,
-      ...services.map((item, index) => `${index + 1}. ${item} — Clear service card with short benefit-driven copy.`),
-      ``,
-      `Trust section: Feature Google rating, review count, service area, fast response time, and real customer photos once available.`,
-      `Gallery section: Use placeholder automotive visuals now, then replace with the owner’s best Instagram photos.`,
-      `Contact section: Encourage visitors to call, text, DM, or submit a simple quote form.`,
-      `Footer disclaimer: Preview website created for ${name}. Images/content may be placeholders. Not yet live.`
-    ].join('\n')
-  }
-
-  function generateSiteHtml(lead = buildLead, source = buildForm) {
-    if (!lead) return ''
-    const name = escapeHtml(lead.business_name || 'Demo Business')
-    const city = escapeHtml(lead.city || 'Phoenix')
-    const category = escapeHtml(lead.category || source.template || 'Automotive Business')
-    const style = source.style || 'Modern / clean'
-    const services = servicesList(source)
-    const rating = lead.google_rating ? `${lead.google_rating}★` : '5-star quality'
-    const reviews = lead.google_reviews ? `${lead.google_reviews} Google reviews` : 'trusted local service'
-    const instagram = lead.instagram_handle ? `https://instagram.com/${lead.instagram_handle.replace('@','')}` : '#'
-    const serviceCards = services.map(service => `<article class="card"><h3>${escapeHtml(service)}</h3><p>Clear package details, benefits, and a simple call-to-action so customers know exactly what to do next.</p></article>`).join('\n        ')
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${name} | ${category} in ${city}</title>
-  <style>
-    :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --text:#f8fafc; --muted:#94a3b8; --line:#243244; --accent:#38bdf8; --accent2:#f97316; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:linear-gradient(135deg,#05070a,#101827 52%,#111827); color:var(--text); }
-    a { color:inherit; text-decoration:none; }
-    .wrap { width:min(1120px,92vw); margin:auto; }
-    header { padding:22px 0; border-bottom:1px solid rgba(255,255,255,.08); position:sticky; top:0; backdrop-filter: blur(16px); background:rgba(11,15,20,.78); }
-    nav { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-    .brand { font-weight:900; letter-spacing:-.03em; font-size:1.1rem; }
-    .navlinks { display:flex; gap:18px; color:var(--muted); font-size:.92rem; }
-    .btn { display:inline-flex; align-items:center; justify-content:center; padding:13px 18px; border-radius:999px; background:var(--accent); color:#041016; font-weight:800; }
-    .btn.secondary { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.18); }
-    .hero { padding:90px 0 70px; display:grid; grid-template-columns:1.12fr .88fr; gap:36px; align-items:center; }
-    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-size:.78rem; font-weight:800; }
-    h1 { font-size:clamp(2.4rem,6vw,5.4rem); line-height:.9; letter-spacing:-.07em; margin:14px 0 18px; }
-    .lead { color:var(--muted); font-size:1.15rem; line-height:1.7; max-width:62ch; }
-    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:28px; }
-    .heroCard { background:rgba(17,24,39,.84); border:1px solid rgba(255,255,255,.1); border-radius:28px; padding:24px; box-shadow:0 24px 80px rgba(0,0,0,.36); }
-    .photo { height:330px; border-radius:22px; background:linear-gradient(135deg,rgba(56,189,248,.35),rgba(249,115,22,.22)), url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80') center/cover; }
-    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; }
-    .stat { background:rgba(255,255,255,.06); padding:14px; border-radius:18px; border:1px solid rgba(255,255,255,.08); }
-    .stat strong { display:block; font-size:1.25rem; }
-    section { padding:58px 0; }
-    .sectionHead { display:flex; justify-content:space-between; gap:24px; align-items:end; margin-bottom:24px; }
-    h2 { font-size:clamp(1.8rem,3vw,3rem); margin:0; letter-spacing:-.05em; }
-    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-    .card { background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1); border-radius:22px; padding:22px; }
-    .card h3 { margin:0 0 10px; }
-    .card p, .muted { color:var(--muted); line-height:1.65; }
-    .gallery { display:grid; grid-template-columns:1.2fr .8fr .8fr; gap:14px; }
-    .tile { min-height:220px; border-radius:22px; background:linear-gradient(135deg,rgba(56,189,248,.25),rgba(15,23,42,.5)), url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=80') center/cover; border:1px solid rgba(255,255,255,.1); }
-    .tile:nth-child(2){ background-image:linear-gradient(135deg,rgba(249,115,22,.24),rgba(15,23,42,.55)), url('https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1000&q=80'); }
-    .tile:nth-child(3){ background-image:linear-gradient(135deg,rgba(56,189,248,.18),rgba(15,23,42,.62)), url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1000&q=80'); }
-    .contact { background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(249,115,22,.1)); border:1px solid rgba(255,255,255,.1); border-radius:30px; padding:34px; display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center; }
-    footer { color:var(--muted); border-top:1px solid rgba(255,255,255,.08); padding:24px 0; font-size:.9rem; }
-    @media (max-width: 820px){ .hero,.contact{grid-template-columns:1fr}.grid,.gallery{grid-template-columns:1fr}.navlinks{display:none}.stats{grid-template-columns:1fr} }
-  </style>
-</head>
-<body>
-  <header><div class="wrap"><nav><div class="brand">${name}</div><div class="navlinks"><a href="#services">Services</a><a href="#gallery">Gallery</a><a href="#contact">Contact</a></div><a class="btn" href="#contact">Request Quote</a></nav></div></header>
-  <main>
-    <div class="wrap hero">
-      <div>
-        <div class="eyebrow">${category} · ${city}</div>
-        <h1>${name} makes it easy to book quality automotive work.</h1>
-        <p class="lead">A clean demo website built to help customers understand the services, trust the business, and reach out without hunting through social media DMs.</p>
-        <div class="actions"><a class="btn" href="#contact">Request a Quote</a><a class="btn secondary" href="#services">View Services</a></div>
-      </div>
-      <aside class="heroCard"><div class="photo"></div><div class="stats"><div class="stat"><strong>${escapeHtml(rating)}</strong><span>${escapeHtml(reviews)}</span></div><div class="stat"><strong>${city}</strong><span>Service Area</span></div><div class="stat"><strong>${escapeHtml(style)}</strong><span>Demo Style</span></div></div></aside>
-    </div>
-    <section id="services"><div class="wrap"><div class="sectionHead"><div><div class="eyebrow">Services</div><h2>Clear offers, fewer missed leads.</h2></div><p class="muted">Service cards can be customized with pricing, package details, and booking buttons.</p></div><div class="grid">
-        ${serviceCards}
-      </div></div></section>
-    <section id="gallery"><div class="wrap"><div class="sectionHead"><div><div class="eyebrow">Gallery</div><h2>Built for before-and-after proof.</h2></div><p class="muted">Replace these placeholders with Instagram photos or client-provided images.</p></div><div class="gallery"><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div></section>
-    <section><div class="wrap"><div class="grid"><div class="card"><h3>Fast response</h3><p>Make phone, text, and quote requests obvious from every page.</p></div><div class="card"><h3>Mobile-ready</h3><p>Most local automotive leads browse from their phone. This layout is built for that.</p></div><div class="card"><h3>Trust-focused</h3><p>Show reviews, photos, location, and service details in one polished place.</p></div></div></div></section>
-    <section id="contact"><div class="wrap"><div class="contact"><div><div class="eyebrow">Ready to book?</div><h2>Request a quote from ${name}.</h2><p class="muted">Call, text, DM, or use this form area to capture leads from the website.</p></div><div class="actions"><a class="btn" href="tel:${escapeHtml(lead.phone || '')}">Call Now</a><a class="btn secondary" href="${escapeHtml(instagram)}">Instagram</a></div></div></div></section>
-  </main>
-  <footer><div class="wrap">Preview website created for ${name}. Images and copy are placeholders. Not yet live.</div></footer>
-</body>
-</html>`
-  }
+  function generateDemoBrief(lead = buildLead, source = buildForm) { return demoBuilder.generateDemoBrief(lead, source) }
+  function slugify(value = '') { return demoBuilder.slugify(value) }
+  function generateSiteCopy(lead = buildLead, source = buildForm) { return demoBuilder.generateSiteCopy(lead, source) }
+  function generateSiteHtml(lead = buildLead, source = buildForm) { return demoBuilder.generateSiteHtml(lead, source) }
 
   function generateTemplateSite() {
     const copy = generateSiteCopy(buildLead, buildForm)
@@ -350,72 +173,22 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    if (!supabase) { setAuthReady(true); return }
-    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthReady(true) })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
-  async function loadTeams() {
-    if (!supabase || !session) return
-    setMessage('')
-    const { data, error } = await supabase.from('teams').select('*').order('created_at', { ascending: true })
-    if (error) { setMessage(error.message); return }
-    setTeams(data || [])
-    if ((data || []).length && !data.some(t => t.id === activeTeamId)) {
-      setActiveTeamId(data[0].id)
-      localStorage.setItem('active_team_id', data[0].id)
-    }
-  }
-
-  async function loadMembers(teamId = activeTeamId) {
-    if (!supabase || !teamId) return
-    const { data } = await supabase.from('team_members').select('user_id, role, created_at').eq('team_id', teamId).order('created_at')
-    setMembers(data || [])
-  }
-
-  async function loadLeads(teamId = activeTeamId) {
-    setMessage('')
-    if (!supabase) {
-      const local = JSON.parse(localStorage.getItem('crm_leads') || '[]')
-      setLeads(local); return
-    }
-    if (!session || !teamId) return
-    const { data, error } = await supabase.from('leads').select('*').eq('team_id', teamId).order('created_at', { ascending: false })
-    if (error) setMessage(error.message)
-    else setLeads(data || [])
-  }
-
-  useEffect(() => { if (session) loadTeams() }, [session])
-  useEffect(() => { if (activeTeamId) { localStorage.setItem('active_team_id', activeTeamId); loadLeads(activeTeamId); loadMembers(activeTeamId) } }, [activeTeamId, session])
-
-  function normalizeLeadPayload(source) {
-    return {
-      ...source,
-      followers: source.followers ? Number(source.followers) : null,
-      google_rating: source.google_rating ? Number(source.google_rating) : null,
-      google_reviews: source.google_reviews ? Number(source.google_reviews) : null
-    }
-  }
 
   async function addLead(e) {
     e.preventDefault(); setMessage('')
     if (!form.business_name.trim()) return
     const payload = {
-      ...normalizeLeadPayload(form),
+      ...leadService.normalizeLeadPayload(form),
       owner_id: session?.user?.id,
       team_id: activeTeamId || null
     }
-    if (!supabase) {
-      const newLead = { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString() }
-      const next = [newLead, ...leads]
-      setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next)); setForm(blankLead); return
+    try {
+      await createLeadRecord(payload)
+      setForm(blankLead)
+      setShowAddModal(false)
+    } catch (error) {
+      setMessage(error.message)
     }
-    if (!activeTeamId) return setMessage('Create or join a team first.')
-    const { error } = await supabase.from('leads').insert(payload)
-    if (error) setMessage(error.message)
-    else { setForm(blankLead); setShowAddModal(false); loadLeads() }
   }
 
   function setView(nextView) {
@@ -452,17 +225,6 @@ function App() {
     moveLeadToStage(leadId, stage)
   }
 
-  async function updateLead(id, patch) {
-    setMessage('')
-    if (!supabase) {
-      const next = leads.map(l => l.id === id ? { ...l, ...patch } : l)
-      setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next)); return
-    }
-    const { error } = await supabase.from('leads').update(patch).eq('id', id).eq('team_id', activeTeamId)
-    if (error) setMessage(error.message)
-    loadLeads()
-  }
-
   function startEdit(lead) {
     setEditingLead(lead)
     setEditForm({
@@ -477,76 +239,21 @@ function App() {
   async function saveEdit(e) {
     e.preventDefault(); setMessage('')
     if (!editingLead?.id) return
-    const payload = normalizeLeadPayload(editForm)
+    const payload = leadService.normalizeLeadPayload(editForm)
     delete payload.id
     delete payload.created_at
     delete payload.owner_id
     delete payload.team_id
-    if (!supabase) {
-      const next = leads.map(l => l.id === editingLead.id ? { ...l, ...payload } : l)
-      setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next))
-      setEditingLead(null); return
-    }
-    const { error } = await supabase.from('leads').update(payload).eq('id', editingLead.id).eq('team_id', activeTeamId)
-    if (error) return setMessage(error.message)
-    setEditingLead(null); setEditForm(blankLead); loadLeads()
+    await updateLead(editingLead.id, payload)
+    setEditingLead(null); setEditForm(blankLead)
   }
 
   async function deleteLead(id) {
     if (!confirm('Delete this prospect? This cannot be undone.')) return
     setMessage('')
-    if (!supabase) {
-      const next = leads.filter(l => l.id !== id)
-      setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next)); return
-    }
-    const { error } = await supabase.from('leads').delete().eq('id', id).eq('team_id', activeTeamId)
-    if (error) return setMessage(error.message)
-    loadLeads()
+    try { await removeLeadRecord(id) }
+    catch (error) { setMessage(error.message) }
   }
-
-  async function openActivities(lead) {
-    setActivityLead(lead)
-    setActivityForm({ activity_type: 'DM', body: '' })
-    if (!supabase) {
-      const local = JSON.parse(localStorage.getItem('crm_activities') || '[]')
-      setActivities(local.filter(a => a.lead_id === lead.id).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)))
-      return
-    }
-    const { data, error } = await supabase
-      .from('lead_activities')
-      .select('*')
-      .eq('lead_id', lead.id)
-      .eq('team_id', activeTeamId)
-      .order('created_at', { ascending: false })
-    if (error) { setMessage(error.message); setActivities([]) }
-    else setActivities(data || [])
-  }
-
-  async function addActivity(e) {
-    e.preventDefault()
-    if (!activityLead?.id || !activityForm.body.trim()) return
-    const payload = {
-      lead_id: activityLead.id,
-      team_id: activeTeamId || null,
-      user_id: session?.user?.id || null,
-      activity_type: activityForm.activity_type,
-      body: activityForm.body.trim()
-    }
-    if (!supabase) {
-      const newActivity = { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString() }
-      const all = JSON.parse(localStorage.getItem('crm_activities') || '[]')
-      const nextAll = [newActivity, ...all]
-      localStorage.setItem('crm_activities', JSON.stringify(nextAll))
-      setActivities([newActivity, ...activities])
-      setActivityForm({ activity_type: 'DM', body: '' })
-      return
-    }
-    const { error } = await supabase.from('lead_activities').insert(payload)
-    if (error) return setMessage(error.message)
-    setActivityForm({ activity_type: 'DM', body: '' })
-    openActivities(activityLead)
-  }
-
 
   async function openDemoManager(lead) {
     setDemoLead(lead)
@@ -564,18 +271,15 @@ function App() {
       }
       return
     }
-    const { data, error } = await supabase
-      .from('demos')
-      .select('*')
-      .eq('lead_id', lead.id)
-      .maybeSingle()
-    if (error) { setMessage(error.message); return }
-    if (data) {
-      const nextForm = normalizeDemoForm(data)
-      setDemoRecord(data)
-      setDemoForm(nextForm)
-      setDemoInitialForm(nextForm)
-    }
+    try {
+      const data = await demoService.fetchDemoByLead({ leadId: lead.id })
+      if (data) {
+        const nextForm = normalizeDemoForm(data)
+        setDemoRecord(data)
+        setDemoForm(nextForm)
+        setDemoInitialForm(nextForm)
+      }
+    } catch (error) { setMessage(error.message) }
   }
 
   async function logDemoActivity(lead, body) {
@@ -700,55 +404,8 @@ function App() {
     return 'Not Started'
   }
 
-  async function deleteActivity(id) {
-    if (!confirm('Delete this activity note?')) return
-    if (!supabase) {
-      const all = JSON.parse(localStorage.getItem('crm_activities') || '[]')
-      const nextAll = all.filter(a => a.id !== id)
-      localStorage.setItem('crm_activities', JSON.stringify(nextAll))
-      setActivities(activities.filter(a => a.id !== id))
-      return
-    }
-    const { error } = await supabase.from('lead_activities').delete().eq('id', id).eq('team_id', activeTeamId)
-    if (error) return setMessage(error.message)
-    setActivities(activities.filter(a => a.id !== id))
-  }
-
-  function formatActivityDate(value) {
-    if (!value) return ''
-    return new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-  }
-
   async function signOut() {
-    await supabase.auth.signOut(); setSession(null); setTeams([]); setActiveTeamId(''); setLeads([])
-  }
-
-  function copyInvite() {
-    if (!activeTeam?.invite_code) return
-    navigator.clipboard.writeText(activeTeam.invite_code)
-    setMessage(`Invite code copied: ${activeTeam.invite_code}`)
-  }
-
-  function shortUserId(id) {
-    if (!id) return ''
-    return id === session?.user?.id ? 'You' : `${id.slice(0, 8)}…${id.slice(-4)}`
-  }
-
-  async function changeMemberRole(member, nextRole) {
-    if (!isOwner) return setMessage('Only team owners can change roles.')
-    if (member.user_id === session?.user?.id) return setMessage('Owners cannot change their own role from the app.')
-    const { error } = await supabase.rpc('update_team_member_role', { member_team_id: activeTeamId, member_user_id: member.user_id, new_role: nextRole })
-    if (error) return setMessage(error.message)
-    loadMembers(activeTeamId)
-  }
-
-  async function removeMember(member) {
-    if (!isOwner) return setMessage('Only team owners can remove members.')
-    if (member.user_id === session?.user?.id) return setMessage('You cannot remove yourself from the app.')
-    if (!confirm('Remove this team member?')) return
-    const { error } = await supabase.rpc('remove_team_member', { member_team_id: activeTeamId, member_user_id: member.user_id })
-    if (error) return setMessage(error.message)
-    loadMembers(activeTeamId)
+    await authSignOut(); setTeams([]); setActiveTeamId(''); setLeads([])
   }
 
   const filtered = useMemo(() => leads.filter(l => {
