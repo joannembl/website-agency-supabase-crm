@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
 
@@ -100,6 +100,9 @@ function App() {
   const [viewMode, setViewMode] = useState(localStorage.getItem('crm_view_mode') || 'kanban')
   const [showAddModal, setShowAddModal] = useState(false)
   const [draggingLeadId, setDraggingLeadId] = useState(null)
+  const [activityLead, setActivityLead] = useState(null)
+  const [activities, setActivities] = useState([])
+  const [activityForm, setActivityForm] = useState({ activity_type: 'DM', body: '' })
 
   const connected = Boolean(supabase)
   const activeTeam = teams.find(t => t.id === activeTeamId)
@@ -251,6 +254,68 @@ function App() {
     loadLeads()
   }
 
+  async function openActivities(lead) {
+    setActivityLead(lead)
+    setActivityForm({ activity_type: 'DM', body: '' })
+    if (!supabase) {
+      const local = JSON.parse(localStorage.getItem('crm_activities') || '[]')
+      setActivities(local.filter(a => a.lead_id === lead.id).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)))
+      return
+    }
+    const { data, error } = await supabase
+      .from('lead_activities')
+      .select('*')
+      .eq('lead_id', lead.id)
+      .eq('team_id', activeTeamId)
+      .order('created_at', { ascending: false })
+    if (error) { setMessage(error.message); setActivities([]) }
+    else setActivities(data || [])
+  }
+
+  async function addActivity(e) {
+    e.preventDefault()
+    if (!activityLead?.id || !activityForm.body.trim()) return
+    const payload = {
+      lead_id: activityLead.id,
+      team_id: activeTeamId || null,
+      user_id: session?.user?.id || null,
+      activity_type: activityForm.activity_type,
+      body: activityForm.body.trim()
+    }
+    if (!supabase) {
+      const newActivity = { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString() }
+      const all = JSON.parse(localStorage.getItem('crm_activities') || '[]')
+      const nextAll = [newActivity, ...all]
+      localStorage.setItem('crm_activities', JSON.stringify(nextAll))
+      setActivities([newActivity, ...activities])
+      setActivityForm({ activity_type: 'DM', body: '' })
+      return
+    }
+    const { error } = await supabase.from('lead_activities').insert(payload)
+    if (error) return setMessage(error.message)
+    setActivityForm({ activity_type: 'DM', body: '' })
+    openActivities(activityLead)
+  }
+
+  async function deleteActivity(id) {
+    if (!confirm('Delete this activity note?')) return
+    if (!supabase) {
+      const all = JSON.parse(localStorage.getItem('crm_activities') || '[]')
+      const nextAll = all.filter(a => a.id !== id)
+      localStorage.setItem('crm_activities', JSON.stringify(nextAll))
+      setActivities(activities.filter(a => a.id !== id))
+      return
+    }
+    const { error } = await supabase.from('lead_activities').delete().eq('id', id).eq('team_id', activeTeamId)
+    if (error) return setMessage(error.message)
+    setActivities(activities.filter(a => a.id !== id))
+  }
+
+  function formatActivityDate(value) {
+    if (!value) return ''
+    return new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+  }
+
   async function signOut() {
     await supabase.auth.signOut(); setSession(null); setTeams([]); setActiveTeamId(''); setLeads([])
   }
@@ -312,7 +377,7 @@ function App() {
       <section className="card tableWrap fullBoardCard">
         <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
 
-        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button><button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><div className="rowActions"><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button></div></td></tr>)}</tbody></table>}
+        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button><button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button></div></td></tr>)}</tbody></table>}
       </section>
     </main>
 
@@ -339,6 +404,24 @@ function App() {
         </div>
         <div className="modalActions"><button type="button" className="secondaryBtn" onClick={()=>setShowAddModal(false)}>Cancel</button><button type="submit"><Plus size={16}/> Add prospect</button></div>
       </form>
+    </div>}
+
+    {activityLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setActivityLead(null) }}>
+      <div className="editModal activityModal">
+        <div className="modalHeader"><div><h2>Activity Notes</h2><p>{activityLead.business_name}</p></div><button type="button" className="iconBtn" onClick={()=>setActivityLead(null)}><X size={18}/></button></div>
+        <form className="activityForm" onSubmit={addActivity}>
+          <select value={activityForm.activity_type} onChange={e=>setActivityForm({...activityForm, activity_type:e.target.value})}>{['DM','Call','Meeting','Follow-up','Email','Note'].map(x=><option key={x}>{x}</option>)}</select>
+          <textarea placeholder="What happened? Example: Sent first DM with demo link." value={activityForm.body} onChange={e=>setActivityForm({...activityForm, body:e.target.value})}></textarea>
+          <button type="submit"><Plus size={16}/> Add activity</button>
+        </form>
+        <div className="activityTimeline">
+          {activities.length === 0 ? <div className="emptyState">No activity yet. Log your first DM, call, meeting, or follow-up.</div> : activities.map(a=><article className="activityItem" key={a.id}>
+            <div className="activityDot"></div>
+            <div className="activityContent"><div className="activityHeader"><strong>{a.activity_type}</strong><span>{formatActivityDate(a.created_at)}</span></div><p>{a.body}</p></div>
+            <button type="button" className="iconBtn dangerBtn" onClick={()=>deleteActivity(a.id)} title="Delete activity"><Trash2 size={14}/></button>
+          </article>)}
+        </div>
+      </div>
     </div>}
 
     {editingLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setEditingLead(null) }}>
