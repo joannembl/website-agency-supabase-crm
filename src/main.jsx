@@ -112,6 +112,9 @@ function App() {
   const [demoLead, setDemoLead] = useState(null)
   const [demoRecord, setDemoRecord] = useState(null)
   const [demoForm, setDemoForm] = useState(blankDemo)
+  const [demoInitialForm, setDemoInitialForm] = useState(blankDemo)
+  const [demoSaving, setDemoSaving] = useState(false)
+  const [toast, setToast] = useState('')
 
   const connected = Boolean(supabase)
   const activeTeam = teams.find(t => t.id === activeTeamId)
@@ -120,6 +123,35 @@ function App() {
   const currentRole = currentMember?.role || 'member'
   const isOwner = currentRole === 'owner'
   const isAdmin = currentRole === 'owner' || currentRole === 'admin'
+
+  function normalizeDemoForm(source = {}) {
+    return {
+      demo_url: source.demo_url || '',
+      live_url: source.live_url || '',
+      github_repo: source.github_repo || '',
+      hosting_provider: source.hosting_provider || 'Netlify',
+      demo_status: source.demo_status || 'Not Started',
+      deploy_status: source.deploy_status || '',
+      preview_note: source.preview_note || '',
+      feedback: source.feedback || ''
+    }
+  }
+
+  const demoDirty = JSON.stringify(normalizeDemoForm(demoForm)) !== JSON.stringify(normalizeDemoForm(demoInitialForm))
+
+  function showToast(text) {
+    setToast(text)
+    window.clearTimeout(showToast._timer)
+    showToast._timer = window.setTimeout(() => setToast(''), 2800)
+  }
+
+  function requestCloseDemoManager() {
+    if (demoDirty && !confirm('Discard changes? You have unsaved changes to this demo.')) return
+    setDemoLead(null)
+    setDemoRecord(null)
+    setDemoForm(blankDemo)
+    setDemoInitialForm(blankDemo)
+  }
 
   useEffect(() => {
     if (!supabase) { setAuthReady(true); return }
@@ -315,12 +347,15 @@ function App() {
     setDemoLead(lead)
     setDemoRecord(null)
     setDemoForm(blankDemo)
+    setDemoInitialForm(blankDemo)
     if (!supabase) {
       const local = JSON.parse(localStorage.getItem('crm_demos') || '[]')
       const existing = local.find(d => d.lead_id === lead.id)
       if (existing) {
+        const nextForm = normalizeDemoForm(existing)
         setDemoRecord(existing)
-        setDemoForm({ ...blankDemo, ...existing })
+        setDemoForm(nextForm)
+        setDemoInitialForm(nextForm)
       }
       return
     }
@@ -331,47 +366,102 @@ function App() {
       .maybeSingle()
     if (error) { setMessage(error.message); return }
     if (data) {
+      const nextForm = normalizeDemoForm(data)
       setDemoRecord(data)
-      setDemoForm({ ...blankDemo, ...data })
+      setDemoForm(nextForm)
+      setDemoInitialForm(nextForm)
     }
+  }
+
+  async function logDemoActivity(lead, body) {
+    if (!lead?.id || !body) return
+    const payload = {
+      lead_id: lead.id,
+      team_id: activeTeamId || null,
+      user_id: session?.user?.id || null,
+      activity_type: 'Note',
+      body
+    }
+    if (!supabase) {
+      const all = JSON.parse(localStorage.getItem('crm_activities') || '[]')
+      localStorage.setItem('crm_activities', JSON.stringify([{ ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString() }, ...all]))
+      return
+    }
+    await supabase.from('lead_activities').insert(payload)
+  }
+
+  function describeDemoChanges(before, after) {
+    const labels = {
+      demo_status: 'Demo status', demo_url: 'Preview URL', live_url: 'Live URL', github_repo: 'GitHub repo', hosting_provider: 'Hosting provider', deploy_status: 'Deploy status', preview_note: 'Preview notes', feedback: 'Client feedback'
+    }
+    const changes = Object.keys(labels).filter(key => String(before?.[key] || '') !== String(after?.[key] || '')).map(key => labels[key])
+    return changes.length ? `Demo updated: ${changes.join(', ')}.` : 'Demo details saved.'
   }
 
   async function saveDemo(e) {
     e?.preventDefault?.()
-    if (!demoLead?.id) return
+    if (!demoLead?.id || demoSaving) return
+    setMessage('')
+    setDemoSaving(true)
+    const before = normalizeDemoForm(demoInitialForm)
+    const after = normalizeDemoForm(demoForm)
     const payload = {
       lead_id: demoLead.id,
-      demo_url: demoForm.demo_url || null,
-      live_url: demoForm.live_url || null,
-      github_repo: demoForm.github_repo || null,
-      hosting_provider: demoForm.hosting_provider || null,
-      demo_status: demoForm.demo_status || 'Not Started',
-      deploy_status: demoForm.deploy_status || null,
-      preview_note: demoForm.preview_note || null,
-      feedback: demoForm.feedback || null,
-      built: ['Ready','Sent','Revisions','Approved','Live'].includes(demoForm.demo_status)
+      demo_url: after.demo_url || null,
+      live_url: after.live_url || null,
+      github_repo: after.github_repo || null,
+      hosting_provider: after.hosting_provider || null,
+      demo_status: after.demo_status || 'Not Started',
+      deploy_status: after.deploy_status || null,
+      preview_note: after.preview_note || null,
+      feedback: after.feedback || null,
+      built: ['Ready','Sent','Revisions','Approved','Live'].includes(after.demo_status)
     }
-    if (!supabase) {
-      const all = JSON.parse(localStorage.getItem('crm_demos') || '[]')
-      const nextRecord = demoRecord ? { ...demoRecord, ...payload, updated_at: new Date().toISOString() } : { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
-      const nextAll = demoRecord ? all.map(d => d.id === demoRecord.id ? nextRecord : d) : [nextRecord, ...all]
-      localStorage.setItem('crm_demos', JSON.stringify(nextAll))
-      setDemoRecord(nextRecord)
-      setMessage('Demo website details saved.')
-      return
+    try {
+      let savedRecord = null
+      if (!supabase) {
+        const all = JSON.parse(localStorage.getItem('crm_demos') || '[]')
+        savedRecord = demoRecord ? { ...demoRecord, ...payload, updated_at: new Date().toISOString() } : { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+        const nextAll = demoRecord ? all.map(d => d.id === demoRecord.id ? savedRecord : d) : [savedRecord, ...all]
+        localStorage.setItem('crm_demos', JSON.stringify(nextAll))
+        setDemoRecord(savedRecord)
+      } else if (demoRecord?.id) {
+        const { data, error } = await supabase.from('demos').update(payload).eq('id', demoRecord.id).select('*').single()
+        if (error) throw error
+        savedRecord = data
+        setDemoRecord(data)
+      } else {
+        const { data, error } = await supabase.from('demos').insert(payload).select('*').single()
+        if (error) throw error
+        savedRecord = data
+        setDemoRecord(data)
+      }
+      if (payload.demo_status === 'Ready' && demoLead.status === 'Research') await updateLead(demoLead.id, { status: 'Demo Built' })
+      await logDemoActivity(demoLead, describeDemoChanges(before, after))
+      setDemoInitialForm(after)
+      setDemoForm(after)
+      setView('kanban')
+      await loadLeads(activeTeamId)
+      setDemoLead(null)
+      showToast('Demo updated successfully')
+    } catch (error) {
+      setMessage(error.message || 'Unable to save demo. Please try again.')
+    } finally {
+      setDemoSaving(false)
     }
-    let error
-    if (demoRecord?.id) {
-      ;({ error } = await supabase.from('demos').update(payload).eq('id', demoRecord.id))
-    } else {
-      const result = await supabase.from('demos').insert(payload).select('*').single()
-      error = result.error
-      if (!error) setDemoRecord(result.data)
-    }
-    if (error) return setMessage(error.message)
-    if (payload.demo_status === 'Ready' && demoLead.status === 'Research') await updateLead(demoLead.id, { status: 'Demo Built' })
-    setMessage('Demo website details saved.')
   }
+
+  useEffect(() => {
+    if (!demoLead) return
+    function handleKeydown(event) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault()
+        if (demoDirty && !demoSaving) saveDemo(event)
+      }
+    }
+    window.addEventListener('keydown', handleKeydown)
+    return () => window.removeEventListener('keydown', handleKeydown)
+  }, [demoLead, demoDirty, demoSaving, demoForm, demoInitialForm])
 
   async function markDemoSent() {
     if (!demoLead?.id) return
@@ -497,6 +587,7 @@ function App() {
       </div>
     </section>}
 
+    {toast && <div className="toast">{toast}</div>}
     {message && <div className="notice">{message}</div>}
 
     <section className="stats">
@@ -559,7 +650,7 @@ function App() {
     </div>}
 
 
-    {demoLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setDemoLead(null) }}>
+    {demoLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') requestCloseDemoManager() }}>
       <form className="editModal demoManagerModal" onSubmit={saveDemo}>
         <div className="modalHeader demoHeader">
           <div>
@@ -567,7 +658,7 @@ function App() {
             <h2>{demoLead.business_name}</h2>
             <p>Track the preview site from build → sent → approved → live.</p>
           </div>
-          <button type="button" className="iconBtn" onClick={()=>setDemoLead(null)}><X size={18}/></button>
+          <button type="button" className="iconBtn" onClick={requestCloseDemoManager}><X size={18}/></button>
         </div>
 
         <div className="demoProgress">
@@ -586,8 +677,8 @@ function App() {
               <label className="fullWidth">Preview notes<textarea placeholder="What still needs to be changed before sending?" value={demoForm.preview_note || ''} onChange={e=>setDemoForm({...demoForm,preview_note:e.target.value})}/></label>
               <label className="fullWidth">Client feedback / revision notes<textarea placeholder="Owner feedback, requested changes, launch notes..." value={demoForm.feedback || ''} onChange={e=>setDemoForm({...demoForm,feedback:e.target.value})}/></label>
               <div className="fullWidth inlineSaveRow">
-                <button type="button" className="secondaryBtn" onClick={saveDemo}><Save size={16}/> Save notes</button>
-                <span>Use this after updating preview notes or client feedback.</span>
+                <button type="button" className="secondaryBtn" disabled={!demoDirty || demoSaving} onClick={saveDemo}><Save size={16}/> {demoSaving ? 'Saving...' : 'Save notes'}</button>
+                <span>{demoDirty ? 'Unsaved changes' : 'All demo changes saved'} · Cmd/Ctrl + S</span>
               </div>
             </div>
           </section>
@@ -612,7 +703,7 @@ function App() {
             </div>
           </aside>
         </div>
-        <div className="modalActions"><button type="button" className="secondaryBtn" onClick={()=>setDemoLead(null)}>Close</button><button type="submit"><Save size={16}/> Save demo details</button></div>
+        <div className="modalActions"><button type="button" className="secondaryBtn" onClick={requestCloseDemoManager}>Close</button><button type="submit" disabled={!demoDirty || demoSaving}><Save size={16}/> {demoSaving ? 'Saving...' : 'Save demo details'}</button></div>
       </form>
     </div>}
 
