@@ -11,7 +11,7 @@ import * as leadService from './features/leads/leadService'
 import * as demoBuilder from './features/demos/demoBuilder'
 import * as demoService from './features/demos/demoService'
 
-import { AppLayout, Sidebar, Topbar, TeamBar } from './layout'
+import { AppLayout, Sidebar, Topbar } from './layout'
 import DashboardView from './features/dashboard/DashboardView'
 import PlaceholderModule from './features/modules/PlaceholderModule'
 import LeadBoard from './features/leads/LeadBoard'
@@ -435,7 +435,6 @@ function App() {
   return <AppLayout
     sidebar={<Sidebar activeNav={activeNav} setNav={setNav} connected={connected} activeTeam={activeTeam} userEmail={userEmail} />}
     topbar={<Topbar
-      activeNav={activeNav}
       connected={connected}
       userEmail={userEmail}
       teams={teams}
@@ -443,15 +442,6 @@ function App() {
       setActiveTeamId={setActiveTeamId}
       loadLeads={loadLeads}
       signOut={signOut}
-    />}
-    teambar={<TeamBar
-      connected={connected}
-      activeTeam={activeTeam}
-      members={members}
-      currentRole={currentRole}
-      isAdmin={isAdmin}
-      copyInvite={copyInvite}
-      onManageTeam={()=>setShowTeamModal(true)}
     />}
   >
 

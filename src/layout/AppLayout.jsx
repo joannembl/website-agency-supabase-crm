@@ -1,10 +1,11 @@
-export default function AppLayout({ sidebar, topbar, teambar, children }) {
-  return <div className="appShell standardizedAppShell">
+export default function AppLayout({ sidebar, topbar, children }) {
+  return <div className="appShell standardizedAppShell saasAppShell">
     {sidebar}
-    <main className="workspace standardizedWorkspace">
+    <main className="workspace standardizedWorkspace saasWorkspace">
       {topbar}
-      {teambar}
-      {children}
+      <div className="saasPageFrame">
+        {children}
+      </div>
     </main>
   </div>
 }
