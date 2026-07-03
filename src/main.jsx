@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
 
@@ -95,6 +95,8 @@ function App() {
   const [status, setStatus] = useState('All')
   const [category, setCategory] = useState('All')
   const [message, setMessage] = useState('')
+  const [editingLead, setEditingLead] = useState(null)
+  const [editForm, setEditForm] = useState(blankLead)
 
   const connected = Boolean(supabase)
   const activeTeam = teams.find(t => t.id === activeTeamId)
@@ -139,16 +141,22 @@ function App() {
   useEffect(() => { if (session) loadTeams() }, [session])
   useEffect(() => { if (activeTeamId) { localStorage.setItem('active_team_id', activeTeamId); loadLeads(activeTeamId); loadMembers(activeTeamId) } }, [activeTeamId, session])
 
+  function normalizeLeadPayload(source) {
+    return {
+      ...source,
+      followers: source.followers ? Number(source.followers) : null,
+      google_rating: source.google_rating ? Number(source.google_rating) : null,
+      google_reviews: source.google_reviews ? Number(source.google_reviews) : null
+    }
+  }
+
   async function addLead(e) {
     e.preventDefault(); setMessage('')
     if (!form.business_name.trim()) return
     const payload = {
-      ...form,
+      ...normalizeLeadPayload(form),
       owner_id: session?.user?.id,
-      team_id: activeTeamId || null,
-      followers: form.followers ? Number(form.followers) : null,
-      google_rating: form.google_rating ? Number(form.google_rating) : null,
-      google_reviews: form.google_reviews ? Number(form.google_reviews) : null
+      team_id: activeTeamId || null
     }
     if (!supabase) {
       const newLead = { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString() }
@@ -169,6 +177,47 @@ function App() {
     }
     const { error } = await supabase.from('leads').update(patch).eq('id', id).eq('team_id', activeTeamId)
     if (error) setMessage(error.message)
+    loadLeads()
+  }
+
+  function startEdit(lead) {
+    setEditingLead(lead)
+    setEditForm({
+      ...blankLead,
+      ...lead,
+      followers: lead.followers ?? '',
+      google_rating: lead.google_rating ?? '',
+      google_reviews: lead.google_reviews ?? ''
+    })
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault(); setMessage('')
+    if (!editingLead?.id) return
+    const payload = normalizeLeadPayload(editForm)
+    delete payload.id
+    delete payload.created_at
+    delete payload.owner_id
+    delete payload.team_id
+    if (!supabase) {
+      const next = leads.map(l => l.id === editingLead.id ? { ...l, ...payload } : l)
+      setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next))
+      setEditingLead(null); return
+    }
+    const { error } = await supabase.from('leads').update(payload).eq('id', editingLead.id).eq('team_id', activeTeamId)
+    if (error) return setMessage(error.message)
+    setEditingLead(null); setEditForm(blankLead); loadLeads()
+  }
+
+  async function deleteLead(id) {
+    if (!confirm('Delete this prospect? This cannot be undone.')) return
+    setMessage('')
+    if (!supabase) {
+      const next = leads.filter(l => l.id !== id)
+      setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next)); return
+    }
+    const { error } = await supabase.from('leads').delete().eq('id', id).eq('team_id', activeTeamId)
+    if (error) return setMessage(error.message)
     loadLeads()
   }
 
@@ -246,9 +295,34 @@ function App() {
 
       <section className="card tableWrap">
         <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All','Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost'].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
-        <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost'].map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td></tr>)}</tbody></table>
+        <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost'].map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><div className="rowActions"><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button></div></td></tr>)}</tbody></table>
       </section>
     </main>
+
+
+    {editingLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setEditingLead(null) }}>
+      <form className="editModal" onSubmit={saveEdit}>
+        <div className="modalHeader"><div><h2>Edit Prospect</h2><p>{editingLead.business_name}</p></div><button type="button" className="iconBtn" onClick={()=>setEditingLead(null)}><X size={18}/></button></div>
+        <div className="editGrid">
+          <label>Business name<input required value={editForm.business_name || ''} onChange={e=>setEditForm({...editForm,business_name:e.target.value})}/></label>
+          <label>Instagram handle<input value={editForm.instagram_handle || ''} onChange={e=>setEditForm({...editForm,instagram_handle:e.target.value})}/></label>
+          <label>Category<select value={editForm.category || 'Other'} onChange={e=>setEditForm({...editForm,category:e.target.value})}>{['Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select></label>
+          <label>City<input value={editForm.city || ''} onChange={e=>setEditForm({...editForm,city:e.target.value})}/></label>
+          <label>Followers<input value={editForm.followers || ''} onChange={e=>setEditForm({...editForm,followers:e.target.value})}/></label>
+          <label>Website status<select value={editForm.website_status || 'Needs verification'} onChange={e=>setEditForm({...editForm,website_status:e.target.value})}>{['Needs verification','No website','Likely no/weak site','Social-only','Website found','Strong website'].map(x=><option key={x}>{x}</option>)}</select></label>
+          <label>Website URL<input value={editForm.website_url || ''} onChange={e=>setEditForm({...editForm,website_url:e.target.value})}/></label>
+          <label>Email<input value={editForm.email || ''} onChange={e=>setEditForm({...editForm,email:e.target.value})}/></label>
+          <label>Phone<input value={editForm.phone || ''} onChange={e=>setEditForm({...editForm,phone:e.target.value})}/></label>
+          <label>Google rating<input value={editForm.google_rating || ''} onChange={e=>setEditForm({...editForm,google_rating:e.target.value})}/></label>
+          <label>Google reviews<input value={editForm.google_reviews || ''} onChange={e=>setEditForm({...editForm,google_reviews:e.target.value})}/></label>
+          <label>Priority<select value={editForm.priority || 'B'} onChange={e=>setEditForm({...editForm,priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></label>
+          <label>Status<select value={editForm.status || 'Research'} onChange={e=>setEditForm({...editForm,status:e.target.value})}>{['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost'].map(x=><option key={x}>{x}</option>)}</select></label>
+          <label className="fullWidth">Notes<textarea value={editForm.notes || ''} onChange={e=>setEditForm({...editForm,notes:e.target.value})}/></label>
+        </div>
+        <div className="modalActions"><button type="button" className="secondaryBtn" onClick={()=>setEditingLead(null)}>Cancel</button><button type="submit"><Save size={16}/> Save changes</button></div>
+      </form>
+    </div>}
+
   </div>
 }
 
