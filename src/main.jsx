@@ -114,6 +114,10 @@ function App() {
   const [demoForm, setDemoForm] = useState(blankDemo)
   const [demoInitialForm, setDemoInitialForm] = useState(blankDemo)
   const [demoSaving, setDemoSaving] = useState(false)
+  const [buildLead, setBuildLead] = useState(null)
+  const [buildForm, setBuildForm] = useState({ template: 'Mobile Detailing', style: 'Modern / clean', services: '', photos: '', notes: '' })
+  const [buildBrief, setBuildBrief] = useState('')
+  const [buildSaving, setBuildSaving] = useState(false)
   const [toast, setToast] = useState('')
 
   const connected = Boolean(supabase)
@@ -151,6 +155,104 @@ function App() {
     setDemoRecord(null)
     setDemoForm(blankDemo)
     setDemoInitialForm(blankDemo)
+  }
+
+
+  function openBuildDemo(lead) {
+    const defaultTemplate = lead.category && lead.category !== 'Other' ? lead.category : 'Mobile Detailing'
+    setBuildLead(lead)
+    setBuildForm({
+      template: defaultTemplate,
+      style: 'Modern / clean',
+      services: lead.notes || '',
+      photos: '',
+      notes: ''
+    })
+    setBuildBrief('')
+  }
+
+  function generateDemoBrief(lead = buildLead, source = buildForm) {
+    if (!lead) return ''
+    const services = source.services?.trim() || 'Add the main services/packages for this business.'
+    const photos = source.photos?.trim() || 'Use placeholder automotive/detailing imagery until client photos are provided.'
+    const notes = source.notes?.trim() || 'Create a simple demo-first landing page that makes the business look established and easy to contact.'
+    return [
+      `Demo website brief for ${lead.business_name}`,
+      ``,
+      `Business type: ${lead.category || source.template}`,
+      `City/market: ${lead.city || 'Phoenix'}`,
+      `Instagram: ${lead.instagram_handle || 'Not added'}`,
+      `Website status: ${lead.website_status || 'Needs verification'}`,
+      `Google rating/reviews: ${lead.google_rating || 'N/A'} (${lead.google_reviews || 0} reviews)`,
+      ``,
+      `Template: ${source.template}`,
+      `Visual style: ${source.style}`,
+      ``,
+      `Recommended sections:`,
+      `1. Hero section with clear headline, service area, and call-to-action`,
+      `2. Services/packages section`,
+      `3. Before/after or portfolio gallery`,
+      `4. Why choose us / trust section`,
+      `5. Google reviews/testimonials`,
+      `6. Contact form and call/text buttons`,
+      `7. Footer with Instagram, phone, service area, and preview disclaimer`,
+      ``,
+      `Services to feature:`,
+      services,
+      ``,
+      `Photo/content notes:`,
+      photos,
+      ``,
+      `Build notes:`,
+      notes,
+      ``,
+      `Next step: Build the demo, save the preview URL in Demo Manager, then move this prospect to Demo Built.`
+    ].join('\n')
+  }
+
+  async function saveBuildDemo(e) {
+    e?.preventDefault?.()
+    if (!buildLead?.id || buildSaving) return
+    setBuildSaving(true)
+    setMessage('')
+    const brief = buildBrief || generateDemoBrief(buildLead, buildForm)
+    const payload = {
+      lead_id: buildLead.id,
+      demo_status: 'Building',
+      hosting_provider: 'Netlify',
+      deploy_status: 'Brief generated — ready to build',
+      preview_note: brief,
+      feedback: buildForm.notes || null,
+      built: false
+    }
+    try {
+      if (!supabase) {
+        const all = JSON.parse(localStorage.getItem('crm_demos') || '[]')
+        const existing = all.find(d => d.lead_id === buildLead.id)
+        const saved = existing ? { ...existing, ...payload, updated_at: new Date().toISOString() } : { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+        const nextAll = existing ? all.map(d => d.id === existing.id ? saved : d) : [saved, ...all]
+        localStorage.setItem('crm_demos', JSON.stringify(nextAll))
+      } else {
+        const { data: existing } = await supabase.from('demos').select('id').eq('lead_id', buildLead.id).maybeSingle()
+        if (existing?.id) {
+          const { error } = await supabase.from('demos').update(payload).eq('id', existing.id)
+          if (error) throw error
+        } else {
+          const { error } = await supabase.from('demos').insert(payload)
+          if (error) throw error
+        }
+      }
+      await logDemoActivity(buildLead, 'Build demo website brief created and demo status changed to Building.')
+      setBuildLead(null)
+      setBuildBrief('')
+      setView('kanban')
+      await loadLeads(activeTeamId)
+      showToast('Build demo brief saved')
+    } catch (error) {
+      setMessage(error.message || 'Unable to save build demo brief.')
+    } finally {
+      setBuildSaving(false)
+    }
   }
 
   useEffect(() => {
@@ -601,7 +703,7 @@ function App() {
       <section className="card tableWrap fullBoardCard">
         <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
 
-        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span><span className="demoChip">Demo: {demoStatusForLead(l)}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
+        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span><span className="demoChip">Demo: {demoStatusForLead(l)}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
       </section>
     </main>
 
@@ -649,6 +751,45 @@ function App() {
       </div>
     </div>}
 
+
+    {buildLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setBuildLead(null) }}>
+      <form className="editModal buildDemoModal" onSubmit={saveBuildDemo}>
+        <div className="modalHeader">
+          <div><span className="eyebrow">V1 guided builder</span><h2>Build Demo Website</h2><p>{buildLead.business_name}</p></div>
+          <button type="button" className="iconBtn" onClick={()=>setBuildLead(null)}><X size={18}/></button>
+        </div>
+        <div className="buildDemoGrid">
+          <section className="buildDemoForm">
+            <h3>Demo inputs</h3>
+            <p>Use this to turn a prospect into a clear website brief before you build the actual demo.</p>
+            <label>Template
+              <select value={buildForm.template} onChange={e=>setBuildForm({...buildForm, template:e.target.value})}>{['Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select>
+            </label>
+            <label>Style direction
+              <select value={buildForm.style} onChange={e=>setBuildForm({...buildForm, style:e.target.value})}>{['Modern / clean','Luxury / premium','Bold performance','Minimal black & white','Friendly local business','Instagram portfolio style'].map(x=><option key={x}>{x}</option>)}</select>
+            </label>
+            <label>Services / packages to feature
+              <textarea placeholder="Example: Full detail, ceramic coating, paint correction, maintenance wash..." value={buildForm.services} onChange={e=>setBuildForm({...buildForm, services:e.target.value})}></textarea>
+            </label>
+            <label>Photo / content notes
+              <textarea placeholder="Example: Use IG photos later, placeholder hero for now, include before/after gallery..." value={buildForm.photos} onChange={e=>setBuildForm({...buildForm, photos:e.target.value})}></textarea>
+            </label>
+            <label>Extra build notes
+              <textarea placeholder="Anything specific you want included in this demo?" value={buildForm.notes} onChange={e=>setBuildForm({...buildForm, notes:e.target.value})}></textarea>
+            </label>
+            <div className="modalActions inlineActions">
+              <button type="button" className="secondaryBtn" onClick={()=>setBuildBrief(generateDemoBrief())}><Rocket size={16}/> Generate brief</button>
+              <button type="submit" disabled={buildSaving}><Save size={16}/> {buildSaving ? 'Saving...' : 'Save as Building'}</button>
+            </div>
+          </section>
+          <aside className="buildDemoPreview">
+            <h3>Generated website brief</h3>
+            <p>This gets saved into the Demo Manager preview notes.</p>
+            <textarea value={buildBrief || generateDemoBrief()} onChange={e=>setBuildBrief(e.target.value)}></textarea>
+          </aside>
+        </div>
+      </form>
+    </div>}
 
     {demoLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') requestCloseDemoManager() }}>
       <form className="editModal demoManagerModal" onSubmit={saveDemo}>

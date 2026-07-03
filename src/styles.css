@@ -35,3 +35,49 @@
 .inlineSaveRow{display:flex;align-items:center;gap:12px;justify-content:flex-end;padding:4px 0 0}.inlineSaveRow span{font-size:13px;color:#64748b}.demoManagerModal .modalActions{position:sticky;bottom:0;background:white;border-top:1px solid #e5e7eb;padding:14px 22px;margin:0;z-index:3}.demoManagerModal .editGrid textarea{min-height:120px}@media(max-width:700px){.inlineSaveRow{align-items:stretch;flex-direction:column}.inlineSaveRow button{width:100%}}
 
 .toast{position:fixed;right:22px;bottom:22px;z-index:100;background:#111827;color:white;border-radius:14px;padding:12px 16px;box-shadow:0 18px 40px rgba(0,0,0,.22);font-weight:800}.demoManagerModal button:disabled{opacity:.55;cursor:not-allowed}
+
+/* Build Demo Website V1 */
+.buildDemoModal {
+  max-width: 1120px;
+  width: min(1120px, calc(100vw - 32px));
+}
+.buildDemoGrid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 18px;
+  padding: 18px;
+}
+.buildDemoForm,
+.buildDemoPreview {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 18px;
+}
+.buildDemoForm h3,
+.buildDemoPreview h3 { margin: 0 0 6px; }
+.buildDemoForm p,
+.buildDemoPreview p { margin: 0 0 14px; color: #64748b; font-size: 0.92rem; }
+.buildDemoForm label { display: block; margin-bottom: 12px; font-weight: 700; color: #111827; }
+.buildDemoForm input,
+.buildDemoForm select,
+.buildDemoForm textarea,
+.buildDemoPreview textarea {
+  margin-top: 6px;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  background: white;
+}
+.buildDemoForm textarea { min-height: 82px; resize: vertical; }
+.buildDemoPreview textarea {
+  min-height: 520px;
+  resize: vertical;
+  line-height: 1.45;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.86rem;
+}
+.inlineActions { justify-content: flex-end; padding: 0; border-top: 0; }
+@media (max-width: 850px) { .buildDemoGrid { grid-template-columns: 1fr; } .buildDemoPreview textarea { min-height: 360px; } }
