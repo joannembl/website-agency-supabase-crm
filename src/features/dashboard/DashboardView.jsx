@@ -2,6 +2,7 @@ import {
   Activity,
   ArrowRight,
   CheckCircle2,
+  Bell,
   Circle,
   Clock3,
   CalendarDays,
@@ -19,6 +20,7 @@ import { Button, Card, CardHeader, EmptyState, StatCard, Badge } from '../../com
 import { PageLayout, PageStats, PageContent } from '../../layout'
 import { followUpTone, getFollowUpLabel, getFollowUpStatus } from '../leads/leadService'
 import { getTaskDueStatus, taskDueLabel, taskTone } from '../tasks/taskService'
+import { formatNotificationTime, notificationIcon } from '../notifications/notificationService'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -31,7 +33,7 @@ function leadLabel(lead) {
   return lead?.business_name || lead?.instagram_handle || 'Untitled prospect'
 }
 
-export default function DashboardView({ leads, tasks = [], noWebsite, demos, mrr, pipelineStages, pipelineCounts, setNav }) {
+export default function DashboardView({ leads, tasks = [], notifications = [], noWebsite, demos, mrr, pipelineStages, pipelineCounts, setNav }) {
   const won = leads.filter(l => l.status === 'Won').length
   const proposalCount = leads.filter(l => ['Proposal', 'Meeting'].includes(l.status)).length
   const demoLeads = leads.filter(l => ['Demo Built','DM Sent','Follow-up','Meeting','Proposal'].includes(l.status))
@@ -234,17 +236,17 @@ export default function DashboardView({ leads, tasks = [], noWebsite, demos, mrr
       </Card>
 
       <Card className="dashboardPanel recentActivityPanel">
-        <CardHeader title="Recent Activity" description="A lightweight pulse of recent CRM movement." />
-        {recentActivity.length ? <div className="activityPreviewList">
-          {recentActivity.map((item, index) => <div className="activityPreviewItem" key={`${item.detail}-${index}`}>
-            <div className="activityPreviewIcon"><Activity size={15}/></div>
+        <CardHeader title="Notifications" description="Recent reminders and system updates." action={<Button variant="ghost" size="sm" onClick={()=>setNav('Dashboard')}>View all <ArrowRight size={15}/></Button>} />
+        {notifications.length ? <div className="activityPreviewList">
+          {notifications.slice(0, 5).map((item) => <div className={`activityPreviewItem ${item.is_read ? 'isRead' : 'isUnread'}`} key={item.id}>
+            <div className="activityPreviewIcon"><span>{notificationIcon(item.type)}</span></div>
             <div>
-              <strong>{item.label}</strong>
-              <span>{item.detail}</span>
+              <strong>{item.title}</strong>
+              <span>{item.message}</span>
             </div>
-            <small>{item.time}</small>
+            <small>{formatNotificationTime(item.created_at)}</small>
           </div>)}
-        </div> : <EmptyState icon={Clock3} title="No activity yet" description="Activity will appear as you add prospects, build demos, and move the pipeline." />}
+        </div> : <EmptyState icon={Bell} title="No notifications yet" description="Follow-ups, tasks, and demo updates will appear here." />}
       </Card>
 
       <Card className="dashboardPanel revenuePanel">

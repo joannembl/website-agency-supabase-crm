@@ -8,6 +8,7 @@ import useTeams from './hooks/useTeams'
 import useLeads from './hooks/useLeads'
 import useActivities from './hooks/useActivities'
 import useTasks from './hooks/useTasks'
+import useNotifications from './hooks/useNotifications'
 import * as leadService from './features/leads/leadService'
 import * as demoBuilder from './features/demos/demoBuilder'
 import * as demoService from './features/demos/demoService'
@@ -24,6 +25,7 @@ import BuildDemoModal from './features/demos/BuildDemoModal'
 import DemoManagerModal from './features/demos/DemoManagerModal'
 import TasksView from './features/tasks/TasksView'
 import TaskFormModal, { blankTask } from './features/tasks/TaskFormModal'
+import NotificationDrawer from './features/notifications/NotificationDrawer'
 import * as taskService from './features/tasks/taskService'
 import './styles.css'
 
@@ -37,6 +39,7 @@ function App() {
   } = useTeams(session, setMessage)
   const { leads, setLeads, loadLeads, addLead: createLeadRecord, updateLead, deleteLead: removeLeadRecord } = useLeads({ session, activeTeamId, setMessage })
   const { tasks, setTasks, loadTasks, addTask: createTaskRecord, updateTask, deleteTask: removeTaskRecord, completeTask, reopenTask } = useTasks({ session, activeTeamId, setMessage })
+  const { notifications, unreadCount, createNotification, markRead, markAllRead } = useNotifications({ session, activeTeamId, leads, tasks, setMessage })
   const {
     activityLead, setActivityLead, activities, activityForm, setActivityForm,
     openActivities, addActivity, deleteActivity, formatActivityDate
@@ -70,6 +73,7 @@ function App() {
   const [taskStatusFilter, setTaskStatusFilter] = useState('All')
   const [taskPriorityFilter, setTaskPriorityFilter] = useState('All')
   const [taskSaving, setTaskSaving] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
 
   const connected = Boolean(supabase)
   const normalizeDemoForm = demoBuilder.normalizeDemoForm
@@ -168,6 +172,7 @@ function App() {
         }
       }
       await logDemoActivity(buildLead, 'Build demo website brief created and demo status changed to Building.')
+      await createNotification({ type: 'demo_building', title: 'Demo moved to Building', message: buildLead.business_name || 'Demo website', entity_type: 'demo', entity_id: buildLead.id })
       setBuildLead(null)
       setBuildBrief('')
       setGeneratedSiteCopy('')
@@ -199,6 +204,7 @@ function App() {
       setTaskForm(blankTask)
       setShowTaskModal(false)
       showToast('Task created')
+      await createNotification({ type: 'task_created', title: 'Task created', message: payload.title, entity_type: 'task', entity_id: null })
     } catch (error) {
       setMessage(error.message || 'Unable to create task.')
     } finally {
@@ -215,7 +221,8 @@ function App() {
       team_id: activeTeamId || null
     }
     try {
-      await createLeadRecord(payload)
+      const created = await createLeadRecord(payload)
+      await createNotification({ type: 'prospect_created', title: 'New prospect added', message: payload.business_name, entity_type: 'lead', entity_id: created?.id || null })
       setForm(blankLead)
       setShowAddModal(false)
     } catch (error) {
@@ -379,6 +386,7 @@ function App() {
       }
       if (payload.demo_status === 'Ready' && demoLead.status === 'Research') await updateLead(demoLead.id, { status: 'Demo Built' })
       await logDemoActivity(demoLead, describeDemoChanges(before, after))
+      await createNotification({ type: 'demo_status_changed', title: `Demo ${payload.demo_status}`, message: demoLead.business_name || 'Demo website', entity_type: 'demo', entity_id: demoLead.id })
       setDemoInitialForm(after)
       setDemoForm(after)
       setView('kanban')
@@ -476,6 +484,8 @@ function App() {
       setActiveTeamId={setActiveTeamId}
       loadLeads={loadLeads}
       signOut={signOut}
+      unreadCount={unreadCount}
+      onOpenNotifications={()=>setShowNotifications(true)}
     />}
   >
 
@@ -490,6 +500,7 @@ function App() {
         pipelineStages={pipelineStages}
         pipelineCounts={pipelineCounts}
         tasks={tasks}
+        notifications={notifications}
         setNav={setNav}
       />}
 
@@ -543,6 +554,17 @@ function App() {
       />}
 
       {!showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
+
+
+    <NotificationDrawer
+      open={showNotifications}
+      notifications={notifications}
+      unreadCount={unreadCount}
+      onClose={()=>setShowNotifications(false)}
+      onMarkRead={markRead}
+      onMarkAllRead={markAllRead}
+      onNavigate={setNav}
+    />
 
     <LeadFormModal open={showAddModal} form={form} setForm={setForm} onClose={()=>setShowAddModal(false)} addLead={addLead} />
 

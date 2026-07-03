@@ -1308,3 +1308,28 @@
 
 /* Sprint 2 Phase 3: Tasks */
 .compactHero{padding:28px 30px}.tasksToolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tasksToolbar .uiSearchInput{min-width:280px;flex:1}.tasksToolbar select{height:42px;border-radius:12px;border:1px solid #d1d5db;background:white;color:#0f172a;font-weight:700}.tasksGrid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,.65fr);gap:18px}.taskList{display:grid;gap:10px}.taskRow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:flex-start;padding:14px;border:1px solid #e5e7eb;border-radius:18px;background:#fff;box-shadow:0 8px 18px rgba(15,23,42,.04)}.taskRow--complete{opacity:.7}.taskRow--complete .taskMain strong{text-decoration:line-through;color:#64748b}.taskCompleteBtn{width:36px;height:36px;border-radius:12px;background:#f8fafc;color:#334155;border:1px solid #e2e8f0;padding:0;box-shadow:none}.taskCompleteBtn:hover{background:#ecfdf5;color:#047857}.taskMain{min-width:0}.taskTitleLine{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.taskTitleLine strong{color:#0f172a}.taskMain p{margin:8px 0 0;color:#475569;font-size:14px;line-height:1.45}.taskMetaLine{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px;color:#64748b;font-size:12px;font-weight:700}.taskMetaLine button{background:transparent;color:#2563eb;border:0;padding:0;box-shadow:none;font-size:12px;font-weight:800}.taskQueue{display:grid;gap:10px}.taskQueue button{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f8fafc;color:#0f172a;border:1px solid #e5e7eb;border-radius:16px;box-shadow:none;padding:12px;text-align:left}.taskQueue strong,.taskQueue span{display:block}.taskQueue span{margin-top:3px;color:#64748b;font-size:12px}.taskDashboardList{display:grid;gap:10px}.taskDashboardItem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;color:#0f172a;border:1px solid #e5e7eb;border-radius:16px;box-shadow:none;padding:12px;text-align:left}.taskDashboardItem:hover{border-color:#bfdbfe;background:#eff6ff}.taskDashboardIcon{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:#f1f5f9;color:#475569}.taskDashboardItem strong,.taskDashboardItem span{display:block}.taskDashboardItem span{margin-top:3px;color:#64748b;font-size:12px;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.taskModal textarea{min-height:110px}@media(max-width:980px){.tasksGrid{grid-template-columns:1fr}.tasksToolbar{align-items:stretch}.tasksToolbar>*{width:100%}.tasksToolbar .uiSearchInput{min-width:0}}
+
+/* Phase 4: Notifications */
+.notificationBellButton{position:relative}
+.notificationBadge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ef4444;color:white;font-size:10px;font-weight:800;line-height:17px;text-align:center;border:2px solid var(--surface, #fff)}
+.notificationOverlay{position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.28);backdrop-filter:blur(2px);display:flex;justify-content:flex-end}
+.notificationDrawer{width:min(440px,calc(100vw - 24px));height:100vh;background:var(--surface,#fff);box-shadow:-20px 0 60px rgba(15,23,42,.22);display:flex;flex-direction:column;border-left:1px solid var(--border,#e5e7eb)}
+.notificationDrawerHeader{padding:24px 24px 18px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--border,#e5e7eb)}
+.notificationDrawerHeader h2{margin:0;font-size:22px;letter-spacing:-.03em;color:var(--text,#111827)}
+.notificationDrawerHeader p{margin:6px 0 0;color:var(--muted,#6b7280);font-size:14px}
+.notificationCloseButton{width:36px;height:36px;border-radius:12px;border:1px solid var(--border,#e5e7eb);background:var(--surface,#fff);display:grid;place-items:center;cursor:pointer;color:var(--muted,#6b7280)}
+.notificationCloseButton:hover{background:var(--surface-muted,#f8fafc);color:var(--text,#111827)}
+.notificationDrawerActions{padding:14px 24px;border-bottom:1px solid var(--border,#e5e7eb);display:flex;justify-content:flex-end}
+.notificationList{padding:18px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+.notificationGroup h3{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,#64748b)}
+.notificationItem{width:100%;border:1px solid var(--border,#e5e7eb);background:var(--surface,#fff);border-radius:18px;padding:14px;display:grid;grid-template-columns:38px 1fr 18px;gap:12px;text-align:left;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}
+.notificationItem:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(15,23,42,.10);border-color:#cbd5e1}
+.notificationItem.isUnread{background:linear-gradient(180deg,#fff,#f8fbff);border-color:#bfdbfe}
+.notificationIcon{width:38px;height:38px;border-radius:14px;background:#f1f5f9;display:grid;place-items:center;font-size:18px}
+.notificationContent{min-width:0}
+.notificationTitleRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.notificationTitleRow strong{font-size:14px;color:var(--text,#111827);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notificationContent p{margin:0 0 7px;color:var(--muted,#64748b);font-size:13px;line-height:1.4}
+.notificationContent span{color:var(--muted,#94a3b8);font-size:12px;font-weight:600}
+.notificationArrow{align-self:center;color:var(--muted,#94a3b8)}
+.activityPreviewItem.isUnread{background:#f8fbff;border-color:#dbeafe}
