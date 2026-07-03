@@ -337,7 +337,7 @@ function App() {
   }
 
   async function saveDemo(e) {
-    e.preventDefault()
+    e?.preventDefault?.()
     if (!demoLead?.id) return
     const payload = {
       lead_id: demoLead.id,
@@ -585,6 +585,10 @@ function App() {
               <label>Demo status<select value={demoForm.demo_status || 'Not Started'} onChange={e=>setDemoForm({...demoForm,demo_status:e.target.value})}>{demoStatuses.map(x=><option key={x}>{x}</option>)}</select></label>
               <label className="fullWidth">Preview notes<textarea placeholder="What still needs to be changed before sending?" value={demoForm.preview_note || ''} onChange={e=>setDemoForm({...demoForm,preview_note:e.target.value})}/></label>
               <label className="fullWidth">Client feedback / revision notes<textarea placeholder="Owner feedback, requested changes, launch notes..." value={demoForm.feedback || ''} onChange={e=>setDemoForm({...demoForm,feedback:e.target.value})}/></label>
+              <div className="fullWidth inlineSaveRow">
+                <button type="button" className="secondaryBtn" onClick={saveDemo}><Save size={16}/> Save notes</button>
+                <span>Use this after updating preview notes or client feedback.</span>
+              </div>
             </div>
           </section>
 
