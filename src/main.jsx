@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
 
@@ -18,56 +18,77 @@ function AuthScreen({ onAuthed }) {
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    setMessage('')
-    setLoading(true)
-
+    e.preventDefault(); setMessage(''); setLoading(true)
     const action = mode === 'sign-up'
       ? supabase.auth.signUp({ email, password })
       : supabase.auth.signInWithPassword({ email, password })
-
     const { data, error } = await action
     setLoading(false)
-
-    if (error) {
-      setMessage(error.message)
-      return
-    }
-
-    if (mode === 'sign-up' && !data.session) {
-      setMessage('Account created. Check your email to confirm your login, then come back and sign in.')
-      return
-    }
-
+    if (error) return setMessage(error.message)
+    if (mode === 'sign-up' && !data.session) return setMessage('Account created. Check your email to confirm your login, then come back and sign in.')
     onAuthed(data.session)
   }
 
-  return <div className="authPage">
-    <form onSubmit={handleSubmit} className="authCard">
-      <div className="authIcon"><Lock size={24}/></div>
-      <h1>Website Agency CRM</h1>
-      <p>Sign in to manage your leads, demos, and pipeline.</p>
+  return <div className="authPage"><form onSubmit={handleSubmit} className="authCard">
+    <div className="authIcon"><Lock size={24}/></div>
+    <h1>Website Agency CRM</h1><p>Sign in to manage your shared lead database.</p>
+    {message && <div className="notice authNotice">{message}</div>}
+    <label>Email</label><input type="email" required placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} />
+    <label>Password</label><input type="password" required minLength="6" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
+    <button type="submit" disabled={loading}>{loading ? 'Please wait...' : mode === 'sign-up' ? 'Create account' : 'Sign in'}</button>
+    <button type="button" className="secondaryBtn" onClick={()=>{ setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setMessage('') }}>
+      {mode === 'sign-up' ? 'Already have an account? Sign in' : 'Need an account? Create one'}
+    </button>
+  </form></div>
+}
 
-      {message && <div className="notice authNotice">{message}</div>}
+function TeamSetup({ onTeamReady }) {
+  const [teamName, setTeamName] = useState('Crafted Digital')
+  const [inviteCode, setInviteCode] = useState('')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
 
-      <label>Email</label>
-      <input type="email" required placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} />
+  async function createTeam(e) {
+    e.preventDefault(); setMessage(''); setLoading(true)
+    const { data, error } = await supabase.rpc('create_team', { team_name: teamName })
+    setLoading(false)
+    if (error) return setMessage(error.message)
+    onTeamReady(data)
+  }
 
-      <label>Password</label>
-      <input type="password" required minLength="6" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
+  async function joinTeam(e) {
+    e.preventDefault(); setMessage(''); setLoading(true)
+    const { data, error } = await supabase.rpc('join_team_by_code', { code: inviteCode })
+    setLoading(false)
+    if (error) return setMessage(error.message)
+    onTeamReady(data)
+  }
 
-      <button type="submit" disabled={loading}>{loading ? 'Please wait...' : mode === 'sign-up' ? 'Create account' : 'Sign in'}</button>
-
-      <button type="button" className="secondaryBtn" onClick={()=>{ setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setMessage('') }}>
-        {mode === 'sign-up' ? 'Already have an account? Sign in' : 'Need an account? Create one'}
-      </button>
+  return <div className="authPage"><div className="authCard teamCard">
+    <div className="authIcon"><Users size={24}/></div>
+    <h1>Create or Join a Team</h1>
+    <p>Teams let multiple users share the same leads, pipeline, demos, and MRR dashboard.</p>
+    {message && <div className="notice authNotice">{message}</div>}
+    <form onSubmit={createTeam} className="miniForm">
+      <label>New team name</label>
+      <input required value={teamName} onChange={e=>setTeamName(e.target.value)} />
+      <button disabled={loading}>Create team</button>
     </form>
-  </div>
+    <div className="divider">or</div>
+    <form onSubmit={joinTeam} className="miniForm">
+      <label>Invite code</label>
+      <input required placeholder="Example: A1B2C3D4" value={inviteCode} onChange={e=>setInviteCode(e.target.value.toUpperCase())} />
+      <button disabled={loading} className="secondaryDark">Join team</button>
+    </form>
+  </div></div>
 }
 
 function App() {
   const [session, setSession] = useState(null)
   const [authReady, setAuthReady] = useState(false)
+  const [teams, setTeams] = useState([])
+  const [activeTeamId, setActiveTeamId] = useState(localStorage.getItem('active_team_id') || '')
+  const [members, setMembers] = useState([])
   const [leads, setLeads] = useState([])
   const [form, setForm] = useState(blankLead)
   const [query, setQuery] = useState('')
@@ -76,47 +97,55 @@ function App() {
   const [message, setMessage] = useState('')
 
   const connected = Boolean(supabase)
+  const activeTeam = teams.find(t => t.id === activeTeamId)
 
   useEffect(() => {
-    if (!supabase) {
-      setAuthReady(true)
-      return
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setAuthReady(true)
-    })
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
-    })
-
+    if (!supabase) { setAuthReady(true); return }
+    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthReady(true) })
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  async function loadLeads() {
+  async function loadTeams() {
+    if (!supabase || !session) return
+    setMessage('')
+    const { data, error } = await supabase.from('teams').select('*').order('created_at', { ascending: true })
+    if (error) { setMessage(error.message); return }
+    setTeams(data || [])
+    if ((data || []).length && !data.some(t => t.id === activeTeamId)) {
+      setActiveTeamId(data[0].id)
+      localStorage.setItem('active_team_id', data[0].id)
+    }
+  }
+
+  async function loadMembers(teamId = activeTeamId) {
+    if (!supabase || !teamId) return
+    const { data } = await supabase.from('team_members').select('user_id, role, created_at').eq('team_id', teamId).order('created_at')
+    setMembers(data || [])
+  }
+
+  async function loadLeads(teamId = activeTeamId) {
     setMessage('')
     if (!supabase) {
       const local = JSON.parse(localStorage.getItem('crm_leads') || '[]')
-      setLeads(local)
-      return
+      setLeads(local); return
     }
-    if (!session) return
-    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false })
+    if (!session || !teamId) return
+    const { data, error } = await supabase.from('leads').select('*').eq('team_id', teamId).order('created_at', { ascending: false })
     if (error) setMessage(error.message)
     else setLeads(data || [])
   }
 
-  useEffect(() => { loadLeads() }, [session])
+  useEffect(() => { if (session) loadTeams() }, [session])
+  useEffect(() => { if (activeTeamId) { localStorage.setItem('active_team_id', activeTeamId); loadLeads(activeTeamId); loadMembers(activeTeamId) } }, [activeTeamId, session])
 
   async function addLead(e) {
-    e.preventDefault()
-    setMessage('')
+    e.preventDefault(); setMessage('')
     if (!form.business_name.trim()) return
     const payload = {
       ...form,
       owner_id: session?.user?.id,
+      team_id: activeTeamId || null,
       followers: form.followers ? Number(form.followers) : null,
       google_rating: form.google_rating ? Number(form.google_rating) : null,
       google_reviews: form.google_reviews ? Number(form.google_reviews) : null
@@ -126,6 +155,7 @@ function App() {
       const next = [newLead, ...leads]
       setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next)); setForm(blankLead); return
     }
+    if (!activeTeamId) return setMessage('Create or join a team first.')
     const { error } = await supabase.from('leads').insert(payload)
     if (error) setMessage(error.message)
     else { setForm(blankLead); loadLeads() }
@@ -137,15 +167,19 @@ function App() {
       const next = leads.map(l => l.id === id ? { ...l, ...patch } : l)
       setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next)); return
     }
-    const { error } = await supabase.from('leads').update(patch).eq('id', id)
+    const { error } = await supabase.from('leads').update(patch).eq('id', id).eq('team_id', activeTeamId)
     if (error) setMessage(error.message)
     loadLeads()
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
-    setSession(null)
-    setLeads([])
+    await supabase.auth.signOut(); setSession(null); setTeams([]); setActiveTeamId(''); setLeads([])
+  }
+
+  function copyInvite() {
+    if (!activeTeam?.invite_code) return
+    navigator.clipboard.writeText(activeTeam.invite_code)
+    setMessage(`Invite code copied: ${activeTeam.invite_code}`)
   }
 
   const filtered = useMemo(() => leads.filter(l => {
@@ -167,17 +201,23 @@ function App() {
   }
 
   if (!authReady) return <div className="loading">Loading CRM...</div>
-
   if (supabase && !session) return <AuthScreen onAuthed={setSession} />
+  if (supabase && session && teams.length === 0) return <TeamSetup onTeamReady={(team)=>{ setTeams([team]); setActiveTeamId(team.id); localStorage.setItem('active_team_id', team.id) }} />
 
   return <div>
     <header>
       <div><h1>Website Agency CRM</h1><p>{connected ? `Signed in as ${session?.user?.email}` : 'Local mode — add Supabase keys to sync online'}</p></div>
       <div className="headerActions">
-        <button onClick={loadLeads}><RefreshCw size={16}/> Refresh</button>
+        {connected && <select className="teamSelect" value={activeTeamId} onChange={e=>setActiveTeamId(e.target.value)}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>}
+        <button onClick={()=>loadLeads()}><RefreshCw size={16}/> Refresh</button>
         {connected && <button onClick={signOut}><LogOut size={16}/> Sign out</button>}
       </div>
     </header>
+
+    {connected && activeTeam && <section className="teamBar">
+      <div><strong>{activeTeam.name}</strong><span>{members.length} team member{members.length === 1 ? '' : 's'}</span></div>
+      <button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> Invite code: {activeTeam.invite_code}</button>
+    </section>}
 
     {message && <div className="notice">{message}</div>}
 
