@@ -28,6 +28,14 @@ export default function LeadBoard(props) {
     }} />
   }
 
+  if (activeNav === 'Demo Websites') {
+    return <DemoWebsitesView {...{
+      leads, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal,
+      exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo,
+      openActivities, startEdit, deleteLead, isAdmin
+    }} />
+  }
+
   return <PipelineView {...{
     leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory,
     pipelineStages, viewMode, setView, setShowAddModal, exportCsv, draggingLeadId, setDraggingLeadId,
@@ -36,6 +44,133 @@ export default function LeadBoard(props) {
   }} />
 }
 
+
+function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+  const demoLeads = filtered.filter(lead => {
+    const demoStatus = demoStatusForLead(lead)
+    const stage = lead.status || 'Research'
+    return demoStatus !== 'Not Started' || ['Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won'].includes(stage)
+  })
+  const totalDemos = demoLeads.length
+  const buildingCount = demoLeads.filter(l => demoStatusForLead(l) === 'Building').length
+  const readyCount = demoLeads.filter(l => ['Ready','Demo Ready'].includes(demoStatusForLead(l))).length
+  const liveCount = demoLeads.filter(l => demoStatusForLead(l) === 'Live' || l.status === 'Won').length
+  const sentCount = demoLeads.filter(l => ['Sent','Revisions','Approved'].includes(demoStatusForLead(l))).length
+  const [demoFilter, setDemoFilter] = useState('All')
+  const visibleDemos = demoLeads.filter(lead => demoFilter === 'All' || demoStatusForLead(lead) === demoFilter || (demoFilter === 'Ready' && ['Ready','Demo Ready'].includes(demoStatusForLead(lead))))
+
+  return <main className="demoWebsitesPage">
+    <PageHeader
+      eyebrow="Demo operations"
+      title="Demo Websites"
+      description="Manage every preview site from brief to sent, revisions, approval, and launch. This is your demo-first production dashboard."
+      actions={<>
+        <Button variant="secondary" icon={Download} onClick={exportCsv}>Export CSV</Button>
+        <Button icon={Plus} onClick={()=>setShowAddModal(true)}>Add Prospect</Button>
+      </>}
+      meta={<>
+        <Badge tone="info" dot>{totalDemos} demo projects</Badge>
+        <Badge tone="purple" dot>{readyCount} ready</Badge>
+        <Badge tone="success" dot>{liveCount} live</Badge>
+      </>}
+    />
+
+    <section className="demoStatsGrid">
+      <StatCard label="Total Demos" value={totalDemos} helper="Active demo projects" icon={Monitor} tone="info" />
+      <StatCard label="Building" value={buildingCount} helper="Briefs or templates in progress" icon={Rocket} tone="warning" />
+      <StatCard label="Ready / Sent" value={readyCount + sentCount} helper="Ready to pitch or already sent" icon={Sparkles} tone="purple" />
+      <StatCard label="Live" value={liveCount} helper="Converted into client sites" icon={Globe2} tone="success" />
+    </section>
+
+    <Card className="demoToolbarCard">
+      <Toolbar>
+        <ToolbarGroup className="demoToolbarPrimary">
+          <SearchInput value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search demos by business, Instagram, category, city..." />
+          <FilterSelect label="Pipeline" value={status} onChange={e=>setStatus(e.target.value)} options={['All', ...pipelineStages]} />
+          <FilterSelect label="Category" value={category} onChange={e=>setCategory(e.target.value)} options={['All', ...leadCategories]} />
+        </ToolbarGroup>
+        <ToolbarGroup>
+          <div className="demoStatusTabs" aria-label="Demo status filters">
+            {['All','Building','Ready','Sent','Revisions','Approved','Live'].map(item => <button key={item} type="button" className={demoFilter === item ? 'active' : ''} onClick={()=>setDemoFilter(item)}>{item}</button>)}
+          </div>
+        </ToolbarGroup>
+      </Toolbar>
+    </Card>
+
+    {visibleDemos.length === 0 ? <EmptyState icon={Monitor} title="No demo websites found" description="Build or mark a demo for a prospect to start tracking it here." action={<Button icon={Plus} onClick={()=>setShowAddModal(true)}>Add Prospect</Button>} /> :
+      <section className="demoWebsiteGrid">
+        {visibleDemos.map(lead => <DemoWebsiteCard
+          key={lead.id}
+          lead={lead}
+          demoStatus={demoStatusForLead(lead)}
+          openDemoManager={openDemoManager}
+          openBuildDemo={openBuildDemo}
+          openActivities={openActivities}
+          updateLead={updateLead}
+          pipelineStages={pipelineStages}
+          startEdit={startEdit}
+        />)}
+      </section>}
+  </main>
+}
+
+function DemoWebsiteCard({ lead, demoStatus, openDemoManager, openBuildDemo, openActivities, updateLead, pipelineStages, startEdit }) {
+  const stage = lead.status || 'Research'
+  const businessSlug = slugFromBusinessName(lead.business_name)
+  const previewGuess = lead.website_url && lead.website_status === 'Website found' ? lead.website_url : ''
+  const progress = [
+    { label: 'Brief', done: demoStatus !== 'Not Started' },
+    { label: 'Built', done: ['Ready','Demo Ready','Sent','Revisions','Approved','Live'].includes(demoStatus) },
+    { label: 'Sent', done: ['Sent','Revisions','Approved','Live'].includes(demoStatus) },
+    { label: 'Approved', done: ['Approved','Live'].includes(demoStatus) },
+    { label: 'Live', done: demoStatus === 'Live' || stage === 'Won' }
+  ]
+
+  return <Card className="demoWebsiteCard">
+    <div className="demoCardTop">
+      <div className="pipelineAvatar">{initials(lead.business_name)}</div>
+      <div className="demoCardTitleBlock">
+        <div className="demoCardTitleRow">
+          <h2>{lead.business_name || 'Untitled Demo'}</h2>
+          <Badge tone={statusTone(demoStatus)} dot>{demoStatus}</Badge>
+        </div>
+        <p>{lead.city || 'Phoenix'} · {lead.category || 'Automotive'} · {businessSlug}</p>
+      </div>
+    </div>
+
+    <div className="demoProgressLine">
+      {progress.map(step => <div key={step.label} className={step.done ? 'done' : ''}>
+        <span></span>
+        <small>{step.label}</small>
+      </div>)}
+    </div>
+
+    <div className="demoCardMetaGrid">
+      <div><span>Pipeline</span><strong>{stage}</strong></div>
+      <div><span>Priority</span><strong>{lead.priority || 'B'}</strong></div>
+      <div><span>Website</span><strong>{lead.website_status || 'Needs verification'}</strong></div>
+      <div><span>Instagram</span><strong>{lead.instagram_handle || 'Not added'}</strong></div>
+    </div>
+
+    {lead.notes ? <div className="demoNotesPreview">{lead.notes}</div> : <div className="demoNotesPreview muted">No demo notes yet. Open Manage Demo to add preview notes, feedback, URLs, and deployment details.</div>}
+
+    <div className="demoCardActions">
+      <Button variant="secondary" icon={Monitor} onClick={()=>openDemoManager(lead)}>Manage</Button>
+      <Button variant="secondary" icon={Rocket} onClick={()=>openBuildDemo(lead)}>Build</Button>
+      <Button variant="ghost" icon={MessageSquare} onClick={()=>openActivities(lead)}>Activity</Button>
+      <Button variant="ghost" icon={Pencil} onClick={()=>startEdit(lead)}>Edit</Button>
+    </div>
+
+    <div className="demoCardFooter">
+      <select value={stage} onChange={e=>updateLead(lead.id, { status: e.target.value })}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select>
+      {previewGuess ? <a href={previewGuess} target="_blank" rel="noreferrer">Open site <ExternalLink size={12}/></a> : <span>Preview URL not added</span>}
+    </div>
+  </Card>
+}
+
+function slugFromBusinessName(value = '') {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'demo-site'
+}
 
 function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, viewMode, setView, setShowAddModal, exportCsv, draggingLeadId, setDraggingLeadId, handleDragStart, handleDrop, pipelineCounts, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
   const activePipelineCount = filtered.filter(l => !['Won','Lost'].includes(l.status || 'Research')).length
