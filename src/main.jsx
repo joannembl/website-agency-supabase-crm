@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
 
@@ -10,7 +10,64 @@ const blankLead = {
   google_reviews: '', priority: 'B', status: 'Research', notes: ''
 }
 
+function AuthScreen({ onAuthed }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [mode, setMode] = useState('sign-in')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setMessage('')
+    setLoading(true)
+
+    const action = mode === 'sign-up'
+      ? supabase.auth.signUp({ email, password })
+      : supabase.auth.signInWithPassword({ email, password })
+
+    const { data, error } = await action
+    setLoading(false)
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    if (mode === 'sign-up' && !data.session) {
+      setMessage('Account created. Check your email to confirm your login, then come back and sign in.')
+      return
+    }
+
+    onAuthed(data.session)
+  }
+
+  return <div className="authPage">
+    <form onSubmit={handleSubmit} className="authCard">
+      <div className="authIcon"><Lock size={24}/></div>
+      <h1>Website Agency CRM</h1>
+      <p>Sign in to manage your leads, demos, and pipeline.</p>
+
+      {message && <div className="notice authNotice">{message}</div>}
+
+      <label>Email</label>
+      <input type="email" required placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} />
+
+      <label>Password</label>
+      <input type="password" required minLength="6" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
+
+      <button type="submit" disabled={loading}>{loading ? 'Please wait...' : mode === 'sign-up' ? 'Create account' : 'Sign in'}</button>
+
+      <button type="button" className="secondaryBtn" onClick={()=>{ setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setMessage('') }}>
+        {mode === 'sign-up' ? 'Already have an account? Sign in' : 'Need an account? Create one'}
+      </button>
+    </form>
+  </div>
+}
+
 function App() {
+  const [session, setSession] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
   const [leads, setLeads] = useState([])
   const [form, setForm] = useState(blankLead)
   const [query, setQuery] = useState('')
@@ -20,24 +77,46 @@ function App() {
 
   const connected = Boolean(supabase)
 
+  useEffect(() => {
+    if (!supabase) {
+      setAuthReady(true)
+      return
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setAuthReady(true)
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
   async function loadLeads() {
+    setMessage('')
     if (!supabase) {
       const local = JSON.parse(localStorage.getItem('crm_leads') || '[]')
       setLeads(local)
       return
     }
+    if (!session) return
     const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false })
     if (error) setMessage(error.message)
     else setLeads(data || [])
   }
 
-  useEffect(() => { loadLeads() }, [])
+  useEffect(() => { loadLeads() }, [session])
 
   async function addLead(e) {
     e.preventDefault()
+    setMessage('')
     if (!form.business_name.trim()) return
     const payload = {
       ...form,
+      owner_id: session?.user?.id,
       followers: form.followers ? Number(form.followers) : null,
       google_rating: form.google_rating ? Number(form.google_rating) : null,
       google_reviews: form.google_reviews ? Number(form.google_reviews) : null
@@ -53,12 +132,20 @@ function App() {
   }
 
   async function updateLead(id, patch) {
+    setMessage('')
     if (!supabase) {
       const next = leads.map(l => l.id === id ? { ...l, ...patch } : l)
       setLeads(next); localStorage.setItem('crm_leads', JSON.stringify(next)); return
     }
-    await supabase.from('leads').update(patch).eq('id', id)
+    const { error } = await supabase.from('leads').update(patch).eq('id', id)
+    if (error) setMessage(error.message)
     loadLeads()
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    setSession(null)
+    setLeads([])
   }
 
   const filtered = useMemo(() => leads.filter(l => {
@@ -71,17 +158,25 @@ function App() {
   const noWebsite = leads.filter(l => ['No website','Likely no/weak site','Social-only'].includes(l.website_status)).length
 
   function exportCsv() {
-    const rows = [Object.keys(blankLead), ...leads.map(l => Object.keys(blankLead).map(k => JSON.stringify(l[k] ?? '')))]
+    const columns = Object.keys(blankLead)
+    const rows = [columns, ...leads.map(l => columns.map(k => JSON.stringify(l[k] ?? '')))]
     const csv = rows.map(r => r.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob); a.download = 'website-agency-crm-leads.csv'; a.click()
   }
 
+  if (!authReady) return <div className="loading">Loading CRM...</div>
+
+  if (supabase && !session) return <AuthScreen onAuthed={setSession} />
+
   return <div>
     <header>
-      <div><h1>Website Agency CRM</h1><p>{connected ? 'Connected to Supabase' : 'Local mode — add Supabase keys to sync online'}</p></div>
-      <button onClick={loadLeads}><RefreshCw size={16}/> Refresh</button>
+      <div><h1>Website Agency CRM</h1><p>{connected ? `Signed in as ${session?.user?.email}` : 'Local mode — add Supabase keys to sync online'}</p></div>
+      <div className="headerActions">
+        <button onClick={loadLeads}><RefreshCw size={16}/> Refresh</button>
+        {connected && <button onClick={signOut}><LogOut size={16}/> Sign out</button>}
+      </div>
     </header>
 
     {message && <div className="notice">{message}</div>}
