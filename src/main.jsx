@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, ShieldCheck, UserCog, Monitor, Rocket, Link2 } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, ShieldCheck, UserCog, Monitor, Rocket, Link2, Briefcase, FileText, CheckSquare, DollarSign, BarChart3, Settings, Home } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
 
@@ -104,6 +104,7 @@ function App() {
   const [editingLead, setEditingLead] = useState(null)
   const [editForm, setEditForm] = useState(blankLead)
   const [viewMode, setViewMode] = useState(localStorage.getItem('crm_view_mode') || 'kanban')
+  const [activeNav, setActiveNav] = useState(localStorage.getItem('crm_active_nav') || 'Dashboard')
   const [showAddModal, setShowAddModal] = useState(false)
   const [draggingLeadId, setDraggingLeadId] = useState(null)
   const [activityLead, setActivityLead] = useState(null)
@@ -493,6 +494,14 @@ function App() {
     localStorage.setItem('crm_view_mode', nextView)
   }
 
+  function setNav(nextNav) {
+    setActiveNav(nextNav)
+    localStorage.setItem('crm_active_nav', nextNav)
+    if (nextNav === 'Pipeline') setView('kanban')
+    if (nextNav === 'Prospects') setView('table')
+    if (nextNav === 'Demo Websites') setView('kanban')
+  }
+
 
   async function moveLeadToStage(leadId, nextStage) {
     if (!leadId || !nextStage) return
@@ -836,43 +845,114 @@ function App() {
   if (supabase && !session) return <AuthScreen onAuthed={setSession} />
   if (supabase && session && teams.length === 0) return <TeamSetup onTeamReady={(team)=>{ setTeams([team]); setActiveTeamId(team.id); localStorage.setItem('active_team_id', team.id) }} />
 
-  return <div>
-    <header>
-      <div><h1>Website Agency CRM</h1><p>{connected ? `Signed in as ${session?.user?.email}` : 'Local mode — add Supabase keys to sync online'}</p></div>
-      <div className="headerActions">
-        {connected && <select className="teamSelect" value={activeTeamId} onChange={e=>setActiveTeamId(e.target.value)}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>}
-        <button onClick={()=>loadLeads()}><RefreshCw size={16}/> Refresh</button>
-        {connected && <button onClick={signOut}><LogOut size={16}/> Sign out</button>}
+  const navItems = [
+    { name: 'Dashboard', icon: Home },
+    { name: 'Prospects', icon: Users },
+    { name: 'Pipeline', icon: LayoutDashboard },
+    { name: 'Demo Websites', icon: Monitor },
+    { name: 'Clients', icon: Briefcase },
+    { name: 'Proposals', icon: FileText },
+    { name: 'Tasks', icon: CheckSquare },
+    { name: 'Revenue', icon: DollarSign },
+    { name: 'Analytics', icon: BarChart3 },
+    { name: 'Settings', icon: Settings },
+  ]
+
+  const showLeadBoard = ['Prospects','Pipeline','Demo Websites'].includes(activeNav)
+
+  return <div className="appShell">
+    <aside className="sidebar">
+      <div className="sidebarBrand">
+        <div className="brandMark">CD</div>
+        <div><strong>Crafted Digital</strong><span>Agency CRM</span></div>
       </div>
-    </header>
-
-    {connected && activeTeam && <section className="teamBar">
-      <div><strong>{activeTeam.name}</strong><span>{members.length} team member{members.length === 1 ? '' : 's'} · Your role: {currentRole}</span></div>
-      <div className="teamBarActions">
-        {isAdmin && <button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> Invite code: {activeTeam.invite_code}</button>}
-        <button className="secondaryBtn" onClick={()=>setShowTeamModal(true)}><UserCog size={16}/> Manage team</button>
+      <nav className="sideNav">
+        {navItems.map(item => {
+          const Icon = item.icon
+          return <button key={item.name} className={activeNav === item.name ? 'active' : ''} onClick={()=>setNav(item.name)}><Icon size={18}/><span>{item.name}</span></button>
+        })}
+      </nav>
+      <div className="sidebarFooter">
+        {connected && activeTeam && <span>{activeTeam.name}</span>}
+        {connected && <small>{session?.user?.email}</small>}
       </div>
-    </section>}
+    </aside>
 
-    {toast && <div className="toast">{toast}</div>}
-    {message && <div className="notice">{message}</div>}
+    <div className="workspace">
+      <header className="workspaceHeader">
+        <div><h1>{activeNav}</h1><p>{connected ? `Signed in as ${session?.user?.email}` : 'Local mode — add Supabase keys to sync online'}</p></div>
+        <div className="headerActions">
+          {connected && <select className="teamSelect" value={activeTeamId} onChange={e=>setActiveTeamId(e.target.value)}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>}
+          <button onClick={()=>loadLeads()}><RefreshCw size={16}/> Refresh</button>
+          {connected && <button onClick={signOut}><LogOut size={16}/> Sign out</button>}
+        </div>
+      </header>
 
-    <section className="stats">
-      <div><span>Total Leads</span><strong>{leads.length}</strong></div>
-      <div><span>No/Weak Website</span><strong>{noWebsite}</strong></div>
-      <div><span>Demos/Pipeline</span><strong>{demos}</strong></div>
-      <div><span>Projected MRR</span><strong>${mrr}</strong></div>
-    </section>
+      {connected && activeTeam && <section className="teamBar">
+        <div><strong>{activeTeam.name}</strong><span>{members.length} team member{members.length === 1 ? '' : 's'} · Your role: {currentRole}</span></div>
+        <div className="teamBarActions">
+          {isAdmin && <button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> Invite code: {activeTeam.invite_code}</button>}
+          <button className="secondaryBtn" onClick={()=>setShowTeamModal(true)}><UserCog size={16}/> Manage team</button>
+        </div>
+      </section>}
 
-    <main className="fullBoardMain">
-      <section className="card tableWrap fullBoardCard">
-        <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
+      {toast && <div className="toast">{toast}</div>}
+      {message && <div className="notice">{message}</div>}
 
-        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span><span className="demoChip">Demo: {demoStatusForLead(l)}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
-      </section>
-    </main>
+      {activeNav === 'Dashboard' && <>
+        <section className="stats">
+          <div><span>Total Leads</span><strong>{leads.length}</strong></div>
+          <div><span>No/Weak Website</span><strong>{noWebsite}</strong></div>
+          <div><span>Demos/Pipeline</span><strong>{demos}</strong></div>
+          <div><span>Projected MRR</span><strong>${mrr}</strong></div>
+        </section>
+        <main className="dashboardGrid">
+          <section className="card dashboardPanel">
+            <div className="sectionTitle"><h2>Today’s Command Center</h2><p>Quick snapshot of your agency pipeline.</p></div>
+            <div className="dashboardMetrics">
+              {pipelineStages.map(stage => <div key={stage}><span>{stage}</span><strong>{pipelineCounts[stage] || 0}</strong></div>)}
+            </div>
+          </section>
+          <section className="card dashboardPanel">
+            <div className="sectionTitle"><h2>Next best workflow</h2><p>Use the left navigation to move between the CRM modules.</p></div>
+            <div className="emptyStateList">
+              <button onClick={()=>setNav('Pipeline')}><LayoutDashboard size={16}/> Open Kanban Pipeline</button>
+              <button onClick={()=>setNav('Prospects')}><Users size={16}/> Review Prospect Table</button>
+              <button onClick={()=>setNav('Demo Websites')}><Monitor size={16}/> Manage Demo Websites</button>
+            </div>
+          </section>
+        </main>
+      </>}
 
+      {showLeadBoard && <>
+        <section className="stats compactStats">
+          <div><span>Total Leads</span><strong>{leads.length}</strong></div>
+          <div><span>No/Weak Website</span><strong>{noWebsite}</strong></div>
+          <div><span>Demos/Pipeline</span><strong>{demos}</strong></div>
+          <div><span>Projected MRR</span><strong>${mrr}</strong></div>
+        </section>
 
+        <main className="fullBoardMain">
+          <section className="card tableWrap fullBoardCard">
+            <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
+
+            {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span><span className="demoChip">Demo: {demoStatusForLead(l)}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
+          </section>
+        </main>
+      </>}
+
+      {!showLeadBoard && activeNav !== 'Dashboard' && <main className="modulePlaceholder">
+        <section className="card placeholderCard">
+          <div className="placeholderIcon">{activeNav.slice(0,1)}</div>
+          <h2>{activeNav}</h2>
+          <p>This section is now reserved in the app navigation. We can build this module next without crowding the pipeline view.</p>
+          {activeNav === 'Proposals' && <p>Next: generate proposals using your pricing one-pager and service agreement.</p>}
+          {activeNav === 'Tasks' && <p>Next: daily follow-up dashboard with due dates and assigned users.</p>}
+          {activeNav === 'Revenue' && <p>Next: MRR, setup fees, close rate, and monthly goal tracking.</p>}
+          {activeNav === 'Settings' && <button className="secondaryBtn" onClick={()=>setShowTeamModal(true)}><UserCog size={16}/> Manage Team</button>}
+        </section>
+      </main>}
+    </div>
 
     {showAddModal && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setShowAddModal(false) }}>
       <form className="editModal" onSubmit={addLead}>
