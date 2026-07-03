@@ -1,12 +1,13 @@
 import { RefreshCw, LogOut, Bell, Search } from 'lucide-react'
 import { Button, Badge } from '../components/ui'
 
-export default function Topbar({ connected, userEmail, teams, activeTeamId, setActiveTeamId, loadLeads, signOut, unreadCount = 0, onOpenNotifications }) {
+export default function Topbar({ connected, userEmail, teams, activeTeamId, setActiveTeamId, loadLeads, signOut, unreadCount = 0, onOpenNotifications, onOpenCommandPalette }) {
   return <header className="topbar saasTopbar">
-    <div className="topbarSearch saasGlobalSearch" aria-label="Global search placeholder">
+    <button type="button" className="topbarSearch saasGlobalSearch" aria-label="Open global search" onClick={onOpenCommandPalette}>
       <Search size={16}/>
       <span>Search workspace...</span>
-    </div>
+      <kbd>⌘K</kbd>
+    </button>
 
     <div className="topbarActions saasTopbarActions">
       {connected ? <Badge tone="success" dot>Connected</Badge> : <Badge tone="warning" dot>Local</Badge>}

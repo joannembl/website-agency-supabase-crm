@@ -26,6 +26,7 @@ import DemoManagerModal from './features/demos/DemoManagerModal'
 import TasksView from './features/tasks/TasksView'
 import TaskFormModal, { blankTask } from './features/tasks/TaskFormModal'
 import NotificationDrawer from './features/notifications/NotificationDrawer'
+import CommandPalette from './features/command/CommandPalette'
 import * as taskService from './features/tasks/taskService'
 import './styles.css'
 
@@ -74,6 +75,7 @@ function App() {
   const [taskPriorityFilter, setTaskPriorityFilter] = useState('All')
   const [taskSaving, setTaskSaving] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
 
   const connected = Boolean(supabase)
   const normalizeDemoForm = demoBuilder.normalizeDemoForm
@@ -187,6 +189,18 @@ function App() {
     }
   }
 
+
+
+  useEffect(() => {
+    function handleGlobalShortcut(event) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setShowCommandPalette(true)
+      }
+    }
+    window.addEventListener('keydown', handleGlobalShortcut)
+    return () => window.removeEventListener('keydown', handleGlobalShortcut)
+  }, [])
 
   async function addTask(e) {
     e.preventDefault()
@@ -486,6 +500,7 @@ function App() {
       signOut={signOut}
       unreadCount={unreadCount}
       onOpenNotifications={()=>setShowNotifications(true)}
+      onOpenCommandPalette={()=>setShowCommandPalette(true)}
     />}
   >
 
@@ -555,6 +570,24 @@ function App() {
 
       {!showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
 
+
+    <CommandPalette
+      open={showCommandPalette}
+      onClose={()=>setShowCommandPalette(false)}
+      leads={leads}
+      tasks={tasks}
+      notifications={notifications}
+      setNav={setNav}
+      setQuery={setQuery}
+      setStatus={setStatus}
+      setCategory={setCategory}
+      setShowAddModal={setShowAddModal}
+      setShowTaskModal={setShowTaskModal}
+      openDemoManager={openDemoManager}
+      openBuildDemo={openBuildDemo}
+      openActivities={openActivities}
+      startEdit={startEdit}
+    />
 
     <NotificationDrawer
       open={showNotifications}
