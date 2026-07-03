@@ -99,7 +99,7 @@ function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, 
     </Card>
 
     {filtered.length === 0 ? <EmptyState icon={Users} title="No prospects found" description="Try changing your filters or add a new prospect to start building your pipeline." action={<Button icon={Plus} onClick={()=>setShowAddModal(true)}>Add Prospect</Button>} /> :
-      <section className="prospectCardGrid">
+      <section className="prospectList">
         {filtered.map(lead => <ProspectCard
           key={lead.id}
           lead={lead}
@@ -122,42 +122,47 @@ function ProspectCard({ lead, demoStatus, pipelineStages, updateLead, openDemoMa
   const websiteTone = ['No website','Likely no/weak site','Social-only'].includes(lead.website_status) ? 'warning' : lead.website_status === 'Website found' ? 'success' : 'neutral'
   const stage = lead.status || 'Research'
 
-  return <Card className="prospectCard" interactive>
-    <div className="prospectCardTop">
+  return <Card className="prospectListCard" interactive>
+    <div className="prospectMain">
       <div className="prospectAvatar">{initials(lead.business_name)}</div>
-      <div className="prospectIdentity">
-        <h2>{lead.business_name || 'Untitled Prospect'}</h2>
-        <p><MapPin size={13}/>{lead.city || 'Phoenix'} <span>·</span> {lead.category || 'Automotive'}</p>
+      <div className="prospectSummary">
+        <div className="prospectTitleRow">
+          <h2>{lead.business_name || 'Untitled Prospect'}</h2>
+          <Badge tone={priorityTone}>Priority {lead.priority || 'B'}</Badge>
+        </div>
+        <p className="prospectSubline"><MapPin size={13}/>{lead.city || 'Phoenix'} <span>·</span> {lead.category || 'Automotive'}</p>
+        <div className="prospectBadges cleanBadges">
+          <Badge tone={statusTone(stage)} dot>{stage}</Badge>
+          <Badge tone={statusTone(demoStatus)} dot>Demo: {demoStatus}</Badge>
+          <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
+        </div>
       </div>
-      <Badge tone={priorityTone}>Priority {lead.priority || 'B'}</Badge>
     </div>
 
-    <div className="prospectBadges">
-      <Badge tone={statusTone(stage)} dot>{stage}</Badge>
-      <Badge tone={statusTone(demoStatus)} dot>Demo: {demoStatus}</Badge>
-      <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
-    </div>
-
-    <div className="prospectQuickInfo">
-      <InfoLine icon={Camera} label="Instagram" value={lead.instagram_handle || 'Not added'} href={instagramUrl(lead.instagram_handle)} />
+    <div className="prospectContactGrid">
+      <InfoLine icon={Camera} label="IG" value={lead.instagram_handle || 'Not added'} href={instagramUrl(lead.instagram_handle)} />
       <InfoLine icon={Phone} label="Phone" value={lead.phone || 'Not added'} href={lead.phone ? `tel:${lead.phone}` : ''} />
       <InfoLine icon={Mail} label="Email" value={lead.email || 'Not added'} href={lead.email ? `mailto:${lead.email}` : ''} />
-      <InfoLine icon={Star} label="Reviews" value={lead.google_reviews ? `${lead.google_rating || '—'} · ${lead.google_reviews} reviews` : 'Not added'} />
+      <InfoLine icon={Star} label="Reviews" value={lead.google_reviews ? `${lead.google_rating || '—'} · ${lead.google_reviews}` : 'Not added'} />
     </div>
 
-    {lead.notes ? <p className="prospectNotes">{lead.notes}</p> : <p className="prospectNotes muted"><Clock3 size={14}/> No notes yet. Log a DM, call, or next step.</p>}
-
-    <div className="prospectStageControl">
-      <label>Pipeline stage</label>
-      <select value={stage} onChange={e=>updateLead(lead.id, { status: e.target.value })}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select>
+    <div className="prospectNextStep">
+      <span>Notes / next step</span>
+      <p>{lead.notes || 'No next step yet. Log a DM, call, or follow-up.'}</p>
     </div>
 
-    <div className="prospectActions">
-      <Button size="sm" variant="secondary" icon={Monitor} onClick={()=>openDemoManager(lead)}>Demo</Button>
-      <Button size="sm" variant="secondary" icon={Rocket} onClick={()=>openBuildDemo(lead)}>Build</Button>
-      <Button size="sm" variant="ghost" icon={MessageSquare} onClick={()=>openActivities(lead)}>Activity</Button>
-      <Button size="sm" variant="ghost" icon={Pencil} onClick={()=>startEdit(lead)}>Edit</Button>
-      {isAdmin ? <Button size="sm" variant="danger" icon={Trash2} onClick={()=>deleteLead(lead.id)}>Delete</Button> : null}
+    <div className="prospectControls">
+      <label>
+        Stage
+        <select value={stage} onChange={e=>updateLead(lead.id, { status: e.target.value })}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select>
+      </label>
+      <div className="prospectActionRow">
+        <Button size="sm" variant="secondary" icon={Monitor} onClick={()=>openDemoManager(lead)}>Demo</Button>
+        <Button size="sm" variant="secondary" icon={Rocket} onClick={()=>openBuildDemo(lead)}>Build</Button>
+        <Button size="sm" variant="ghost" icon={MessageSquare} onClick={()=>openActivities(lead)}>Activity</Button>
+        <Button size="sm" variant="ghost" icon={Pencil} onClick={()=>startEdit(lead)}>Edit</Button>
+        {isAdmin ? <Button size="sm" variant="danger" icon={Trash2} onClick={()=>deleteLead(lead.id)}>Delete</Button> : null}
+      </div>
     </div>
   </Card>
 }
