@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, ShieldCheck, UserCog } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, ShieldCheck, UserCog, Monitor, Rocket, Link2 } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
+
+const demoStatuses = ['Not Started','Building','Ready','Sent','Revisions','Approved','Live','Archived']
+const blankDemo = {
+  demo_url: '', live_url: '', github_repo: '', hosting_provider: 'Netlify', demo_status: 'Not Started', deploy_status: '', preview_note: '', feedback: ''
+}
 
 const blankLead = {
   business_name: '', instagram_handle: '', category: 'Mobile Detailing', city: 'Phoenix', followers: '',
@@ -104,6 +109,9 @@ function App() {
   const [activityLead, setActivityLead] = useState(null)
   const [activities, setActivities] = useState([])
   const [activityForm, setActivityForm] = useState({ activity_type: 'DM', body: '' })
+  const [demoLead, setDemoLead] = useState(null)
+  const [demoRecord, setDemoRecord] = useState(null)
+  const [demoForm, setDemoForm] = useState(blankDemo)
 
   const connected = Boolean(supabase)
   const activeTeam = teams.find(t => t.id === activeTeamId)
@@ -302,6 +310,101 @@ function App() {
     openActivities(activityLead)
   }
 
+
+  async function openDemoManager(lead) {
+    setDemoLead(lead)
+    setDemoRecord(null)
+    setDemoForm(blankDemo)
+    if (!supabase) {
+      const local = JSON.parse(localStorage.getItem('crm_demos') || '[]')
+      const existing = local.find(d => d.lead_id === lead.id)
+      if (existing) {
+        setDemoRecord(existing)
+        setDemoForm({ ...blankDemo, ...existing })
+      }
+      return
+    }
+    const { data, error } = await supabase
+      .from('demos')
+      .select('*')
+      .eq('lead_id', lead.id)
+      .maybeSingle()
+    if (error) { setMessage(error.message); return }
+    if (data) {
+      setDemoRecord(data)
+      setDemoForm({ ...blankDemo, ...data })
+    }
+  }
+
+  async function saveDemo(e) {
+    e.preventDefault()
+    if (!demoLead?.id) return
+    const payload = {
+      lead_id: demoLead.id,
+      demo_url: demoForm.demo_url || null,
+      live_url: demoForm.live_url || null,
+      github_repo: demoForm.github_repo || null,
+      hosting_provider: demoForm.hosting_provider || null,
+      demo_status: demoForm.demo_status || 'Not Started',
+      deploy_status: demoForm.deploy_status || null,
+      preview_note: demoForm.preview_note || null,
+      feedback: demoForm.feedback || null,
+      built: ['Ready','Sent','Revisions','Approved','Live'].includes(demoForm.demo_status)
+    }
+    if (!supabase) {
+      const all = JSON.parse(localStorage.getItem('crm_demos') || '[]')
+      const nextRecord = demoRecord ? { ...demoRecord, ...payload, updated_at: new Date().toISOString() } : { ...payload, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+      const nextAll = demoRecord ? all.map(d => d.id === demoRecord.id ? nextRecord : d) : [nextRecord, ...all]
+      localStorage.setItem('crm_demos', JSON.stringify(nextAll))
+      setDemoRecord(nextRecord)
+      setMessage('Demo website details saved.')
+      return
+    }
+    let error
+    if (demoRecord?.id) {
+      ;({ error } = await supabase.from('demos').update(payload).eq('id', demoRecord.id))
+    } else {
+      const result = await supabase.from('demos').insert(payload).select('*').single()
+      error = result.error
+      if (!error) setDemoRecord(result.data)
+    }
+    if (error) return setMessage(error.message)
+    if (payload.demo_status === 'Ready' && demoLead.status === 'Research') await updateLead(demoLead.id, { status: 'Demo Built' })
+    setMessage('Demo website details saved.')
+  }
+
+  async function markDemoSent() {
+    if (!demoLead?.id) return
+    setDemoForm({ ...demoForm, demo_status: 'Sent' })
+    if (supabase && demoRecord?.id) {
+      const { error } = await supabase.from('demos').update({ demo_status: 'Sent', built: true, sent_at: new Date().toISOString() }).eq('id', demoRecord.id)
+      if (error) return setMessage(error.message)
+      await updateLead(demoLead.id, { status: 'DM Sent' })
+      openDemoManager(demoLead)
+    }
+  }
+
+  async function markDemoLive() {
+    if (!demoLead?.id) return
+    setDemoForm({ ...demoForm, demo_status: 'Live' })
+    if (supabase && demoRecord?.id) {
+      const { error } = await supabase.from('demos').update({ demo_status: 'Live', built: true, launched_at: new Date().toISOString() }).eq('id', demoRecord.id)
+      if (error) return setMessage(error.message)
+      await updateLead(demoLead.id, { status: 'Won' })
+      openDemoManager(demoLead)
+    }
+  }
+
+  function demoStatusForLead(lead) {
+    if (lead.status === 'Won') return 'Live'
+    if (lead.status === 'Demo Built') return 'Ready'
+    if (lead.status === 'DM Sent') return 'Sent'
+    if (lead.status === 'Follow-up') return 'Sent'
+    if (lead.status === 'Meeting') return 'Revisions'
+    if (lead.status === 'Proposal') return 'Approved'
+    return 'Not Started'
+  }
+
   async function deleteActivity(id) {
     if (!confirm('Delete this activity note?')) return
     if (!supabase) {
@@ -407,7 +510,7 @@ function App() {
       <section className="card tableWrap fullBoardCard">
         <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
 
-        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
+        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span><span className="demoChip">Demo: {demoStatusForLead(l)}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
       </section>
     </main>
 
@@ -453,6 +556,60 @@ function App() {
           </div>)}
         </div>
       </div>
+    </div>}
+
+
+    {demoLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setDemoLead(null) }}>
+      <form className="editModal demoManagerModal" onSubmit={saveDemo}>
+        <div className="modalHeader demoHeader">
+          <div>
+            <span className="eyebrow">Demo website manager</span>
+            <h2>{demoLead.business_name}</h2>
+            <p>Track the preview site from build → sent → approved → live.</p>
+          </div>
+          <button type="button" className="iconBtn" onClick={()=>setDemoLead(null)}><X size={18}/></button>
+        </div>
+
+        <div className="demoProgress">
+          {demoStatuses.map(status => <button type="button" key={status} className={demoForm.demo_status === status ? 'active' : ''} onClick={()=>setDemoForm({...demoForm, demo_status: status})}>{status}</button>)}
+        </div>
+
+        <div className="demoManagerGrid">
+          <section className="demoMainPanel">
+            <div className="editGrid">
+              <label>Preview / Demo URL<input placeholder="https://business-demo.netlify.app" value={demoForm.demo_url || ''} onChange={e=>setDemoForm({...demoForm,demo_url:e.target.value})}/></label>
+              <label>Live URL<input placeholder="https://clientdomain.com" value={demoForm.live_url || ''} onChange={e=>setDemoForm({...demoForm,live_url:e.target.value})}/></label>
+              <label>GitHub repo<input placeholder="https://github.com/..." value={demoForm.github_repo || ''} onChange={e=>setDemoForm({...demoForm,github_repo:e.target.value})}/></label>
+              <label>Hosting provider<select value={demoForm.hosting_provider || 'Netlify'} onChange={e=>setDemoForm({...demoForm,hosting_provider:e.target.value})}>{['Netlify','Cloudflare Pages','GitHub Pages','Vercel','Other'].map(x=><option key={x}>{x}</option>)}</select></label>
+              <label>Deploy status<input placeholder="Example: Deployed / Needs images / Waiting on domain" value={demoForm.deploy_status || ''} onChange={e=>setDemoForm({...demoForm,deploy_status:e.target.value})}/></label>
+              <label>Demo status<select value={demoForm.demo_status || 'Not Started'} onChange={e=>setDemoForm({...demoForm,demo_status:e.target.value})}>{demoStatuses.map(x=><option key={x}>{x}</option>)}</select></label>
+              <label className="fullWidth">Preview notes<textarea placeholder="What still needs to be changed before sending?" value={demoForm.preview_note || ''} onChange={e=>setDemoForm({...demoForm,preview_note:e.target.value})}/></label>
+              <label className="fullWidth">Client feedback / revision notes<textarea placeholder="Owner feedback, requested changes, launch notes..." value={demoForm.feedback || ''} onChange={e=>setDemoForm({...demoForm,feedback:e.target.value})}/></label>
+            </div>
+          </section>
+
+          <aside className="demoSidePanel">
+            <h3>Quick actions</h3>
+            <p>Use these as the demo moves through your sales workflow.</p>
+            <div className="demoQuickActions">
+              {demoForm.demo_url && <a className="secondaryBtn" href={demoForm.demo_url} target="_blank"><ExternalLink size={16}/> Open demo</a>}
+              {demoForm.github_repo && <a className="secondaryBtn" href={demoForm.github_repo} target="_blank"><Link2 size={16}/> Open repo</a>}
+              <button type="button" className="secondaryBtn" onClick={()=>setDemoForm({...demoForm, demo_status:'Ready', deploy_status: demoForm.deploy_status || 'Ready to send'})}><Rocket size={16}/> Mark ready</button>
+              <button type="button" className="secondaryBtn" onClick={markDemoSent}><MessageSquare size={16}/> Mark sent</button>
+              <button type="button" className="secondaryBtn" onClick={markDemoLive}><Monitor size={16}/> Mark live</button>
+            </div>
+            <div className="demoChecklist">
+              <strong>Launch checklist</strong>
+              <span>□ Demo link saved</span>
+              <span>□ Real photos/content added</span>
+              <span>□ Sent to prospect</span>
+              <span>□ Revisions completed</span>
+              <span>□ Domain/live URL saved</span>
+            </div>
+          </aside>
+        </div>
+        <div className="modalActions"><button type="button" className="secondaryBtn" onClick={()=>setDemoLead(null)}>Close</button><button type="submit"><Save size={16}/> Save demo details</button></div>
+      </form>
     </div>}
 
     {activityLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setActivityLead(null) }}>
