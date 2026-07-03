@@ -1,4 +1,5 @@
-import { ExternalLink, Download, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, Monitor, Rocket, Pencil, Trash2, Plus, Users, Globe2, BadgeDollarSign, Clock3, Camera, Phone, Mail, MapPin, Star, Filter, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { ExternalLink, Download, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, Monitor, Rocket, Pencil, Trash2, Plus, Users, Globe2, BadgeDollarSign, Clock3, Camera, Phone, Mail, MapPin, Star, Filter, Sparkles, X, ChevronDown } from 'lucide-react'
 import { leadCategories, priorities } from '../../constants'
 import Button from '../../components/ui/Button'
 import Badge, { statusTone } from '../../components/ui/Badge'
@@ -9,6 +10,7 @@ import PageHeader from '../../components/ui/PageHeader'
 import SearchInput from '../../components/ui/SearchInput'
 import StatCard from '../../components/ui/StatCard'
 import { Toolbar, ToolbarGroup } from '../../components/ui/Toolbar'
+import Modal from '../../components/ui/Modal'
 
 export default function LeadBoard(props) {
   const {
@@ -218,49 +220,77 @@ function instagramUrl(handle = '') {
 }
 
 function KanbanView({ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
-  return <div className="pipelineKanbanBoard">
-    {pipelineStages.map((stage, stageIndex)=>{
-      const stageLeads = filtered.filter(l => (l.status || 'Research') === stage)
-      return <section className={`pipelineColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}>
-        <div className="pipelineColumnHeader">
-          <div>
-            <strong>{stage}</strong>
-            <small>{stageLeadDescription(stage)}</small>
+  const [selectedLead, setSelectedLead] = useState(null)
+  const selectedDemoStatus = selectedLead ? demoStatusForLead(selectedLead) : 'Not Started'
+
+  return <>
+    <div className="pipelineKanbanBoard">
+      {pipelineStages.map((stage, stageIndex)=>{
+        const stageLeads = filtered.filter(l => (l.status || 'Research') === stage)
+        return <section className={`pipelineColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}>
+          <div className="pipelineColumnHeader">
+            <div>
+              <strong>{stage}</strong>
+              <small>{stageLeadDescription(stage)}</small>
+            </div>
+            <span>{pipelineCounts[stage] || 0}</span>
           </div>
-          <span>{pipelineCounts[stage] || 0}</span>
-        </div>
-        <div className="pipelineColumnBody">
-          {stageLeads.length === 0 ? <div className="pipelineEmptyDrop">Drop leads here</div> : stageLeads.map(l=><PipelineCard
-            key={l.id}
-            lead={l}
-            stageIndex={stageIndex}
-            pipelineStages={pipelineStages}
-            draggingLeadId={draggingLeadId}
-            setDraggingLeadId={setDraggingLeadId}
-            handleDragStart={handleDragStart}
-            demoStatus={demoStatusForLead(l)}
-            updateLead={updateLead}
-            openDemoManager={openDemoManager}
-            openBuildDemo={openBuildDemo}
-            openActivities={openActivities}
-            startEdit={startEdit}
-            deleteLead={deleteLead}
-            isAdmin={isAdmin}
-          />)}
-        </div>
-      </section>
-    })}
-  </div>
+          <div className="pipelineColumnBody">
+            {stageLeads.length === 0 ? <div className="pipelineEmptyDrop">Drop leads here</div> : stageLeads.map(l=><PipelineCard
+              key={l.id}
+              lead={l}
+              stageIndex={stageIndex}
+              pipelineStages={pipelineStages}
+              draggingLeadId={draggingLeadId}
+              setDraggingLeadId={setDraggingLeadId}
+              handleDragStart={handleDragStart}
+              demoStatus={demoStatusForLead(l)}
+              updateLead={updateLead}
+              onOpenDetails={()=>setSelectedLead(l)}
+            />)}
+          </div>
+        </section>
+      })}
+    </div>
+
+    <LeadDetailModal
+      lead={selectedLead}
+      demoStatus={selectedDemoStatus}
+      pipelineStages={pipelineStages}
+      updateLead={updateLead}
+      onClose={()=>setSelectedLead(null)}
+      openDemoManager={openDemoManager}
+      openBuildDemo={openBuildDemo}
+      openActivities={openActivities}
+      startEdit={startEdit}
+      deleteLead={deleteLead}
+      isAdmin={isAdmin}
+    />
+  </>
 }
 
-function PipelineCard({ lead, stageIndex, pipelineStages, draggingLeadId, setDraggingLeadId, handleDragStart, demoStatus, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+function PipelineCard({ lead, stageIndex, pipelineStages, draggingLeadId, setDraggingLeadId, handleDragStart, demoStatus, updateLead, onOpenDetails }) {
   const stage = lead.status || 'Research'
   const websiteTone = ['No website','Likely no/weak site','Social-only'].includes(lead.website_status) ? 'warning' : lead.website_status === 'Website found' ? 'success' : 'neutral'
   const priorityTone = lead.priority === 'A' || lead.priority === 'A+' ? 'success' : lead.priority === 'C' ? 'warning' : 'neutral'
 
-  return <article className={`pipelineLeadCard ${draggingLeadId === lead.id ? 'dragging' : ''}`} draggable onDragStart={e=>handleDragStart(e, lead.id)} onDragEnd={()=>setDraggingLeadId(null)}>
+  const moveStage = (e, nextStage) => {
+    e.stopPropagation()
+    updateLead(lead.id,{status: nextStage})
+  }
+
+  return <article
+    className={`pipelineLeadCard jiraStyleCard ${draggingLeadId === lead.id ? 'dragging' : ''}`}
+    draggable
+    role="button"
+    tabIndex={0}
+    onClick={onOpenDetails}
+    onKeyDown={e=>{ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenDetails() } }}
+    onDragStart={e=>handleDragStart(e, lead.id)}
+    onDragEnd={()=>setDraggingLeadId(null)}
+  >
     <div className="pipelineCardTop">
-      <div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div>
+      <div className="dragHandle" title="Drag to another stage" onClick={e=>e.stopPropagation()}><GripVertical size={16}/></div>
       <div className="pipelineCardIdentity">
         <div className="pipelineAvatar">{initials(lead.business_name)}</div>
         <div>
@@ -277,26 +307,108 @@ function PipelineCard({ lead, stageIndex, pipelineStages, draggingLeadId, setDra
       <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
     </div>
 
-    <div className="pipelineCardDetails">
+    <div className="pipelineCardDetails compact">
       <span><Camera size={13}/>{lead.instagram_handle || 'No Instagram'}</span>
       {lead.phone ? <span><Phone size={13}/>{lead.phone}</span> : null}
-      {lead.google_reviews ? <span><Star size={13}/>{lead.google_rating || '—'} · {lead.google_reviews} reviews</span> : null}
     </div>
 
-    {lead.notes ? <p className="pipelineCardNote">{lead.notes}</p> : <p className="pipelineCardNote muted">No next step logged yet.</p>}
+    {lead.notes ? <p className="pipelineCardNote">{lead.notes}</p> : <p className="pipelineCardNote muted">Click to view details and next actions.</p>}
 
-    <div className="pipelineCardActions">
-      <Button size="sm" variant="ghost" disabled={stageIndex === 0} onClick={()=>updateLead(lead.id,{status:pipelineStages[stageIndex-1]})} title="Move back" icon={ChevronLeft}>Back</Button>
-      <div className="pipelineQuickActions">
-        <button type="button" onClick={()=>openDemoManager(lead)} title="Demo website"><Monitor size={15}/></button>
-        <button type="button" onClick={()=>openBuildDemo(lead)} title="Build demo"><Rocket size={15}/></button>
-        <button type="button" onClick={()=>openActivities(lead)} title="Activity"><MessageSquare size={15}/></button>
-        <button type="button" onClick={()=>startEdit(lead)} title="Edit"><Pencil size={15}/></button>
-        {isAdmin ? <button type="button" className="danger" onClick={()=>deleteLead(lead.id)} title="Delete"><Trash2 size={15}/></button> : null}
-      </div>
-      <Button size="sm" variant="ghost" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(lead.id,{status:pipelineStages[stageIndex+1]})} title="Move forward">Next <ChevronRight size={15}/></Button>
+    <div className="jiraCardFooter" onClick={e=>e.stopPropagation()}>
+      <button type="button" disabled={stageIndex === 0} onClick={e=>moveStage(e, pipelineStages[stageIndex-1])}><ChevronLeft size={14}/> Back</button>
+      <span>Click card for actions</span>
+      <button type="button" disabled={stageIndex === pipelineStages.length - 1} onClick={e=>moveStage(e, pipelineStages[stageIndex+1])}>Next <ChevronRight size={14}/></button>
     </div>
   </article>
+}
+
+
+function LeadDetailModal({ lead, demoStatus, pipelineStages, updateLead, onClose, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+  if (!lead) return null
+  const stage = lead.status || 'Research'
+  const websiteTone = ['No website','Likely no/weak site','Social-only'].includes(lead.website_status) ? 'warning' : lead.website_status === 'Website found' ? 'success' : 'neutral'
+  const priorityTone = lead.priority === 'A' || lead.priority === 'A+' ? 'success' : lead.priority === 'C' ? 'warning' : 'neutral'
+
+  const runAndClose = (callback) => {
+    callback(lead)
+    onClose()
+  }
+
+  return <Modal
+    open={Boolean(lead)}
+    onClose={onClose}
+    className="jiraLeadModal"
+    title={lead.business_name || 'Prospect details'}
+    description={`${lead.city || 'Phoenix'} · ${lead.category || 'Automotive'}`}
+    footer={<>
+      <Button variant="secondary" icon={X} onClick={onClose}>Close</Button>
+      <Button icon={Pencil} onClick={()=>runAndClose(startEdit)}>Edit Prospect</Button>
+    </>}
+  >
+    <div className="jiraLeadModalSummary">
+      <div className="pipelineAvatar large">{initials(lead.business_name)}</div>
+      <div>
+        <div className="jiraLeadModalBadges">
+          <Badge tone={statusTone(stage)} dot>{stage}</Badge>
+          <Badge tone={statusTone(demoStatus)} dot>Demo: {demoStatus}</Badge>
+          <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
+          <Badge tone={priorityTone}>Priority {lead.priority || 'B'}</Badge>
+        </div>
+        <p>{lead.notes || 'No next step logged yet. Use the sections below to manage this prospect.'}</p>
+      </div>
+    </div>
+
+    <div className="jiraModalSections">
+      <CollapsibleSection title="Prospect details" icon={Users} defaultOpen>
+        <div className="jiraDetailGrid">
+          <InfoLine icon={Camera} label="Instagram" value={lead.instagram_handle || 'Not added'} href={instagramUrl(lead.instagram_handle)} />
+          <InfoLine icon={Phone} label="Phone" value={lead.phone || 'Not added'} href={lead.phone ? `tel:${lead.phone}` : ''} />
+          <InfoLine icon={Mail} label="Email" value={lead.email || 'Not added'} href={lead.email ? `mailto:${lead.email}` : ''} />
+          <InfoLine icon={Star} label="Reviews" value={lead.google_reviews ? `${lead.google_rating || '—'} · ${lead.google_reviews}` : 'Not added'} />
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Pipeline" icon={LayoutDashboard} defaultOpen>
+        <label className="jiraFieldLabel">
+          Stage
+          <select value={stage} onChange={e=>updateLead(lead.id, { status: e.target.value })}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select>
+        </label>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Demo website" icon={Monitor}>
+        <p>Open the Demo Manager to update preview URL, live URL, GitHub repo, hosting provider, status, and revision notes.</p>
+        <Button variant="secondary" icon={Monitor} onClick={()=>runAndClose(openDemoManager)}>Open Demo Manager</Button>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Build demo website" icon={Rocket}>
+        <p>Use the guided demo builder to generate the website brief and starter template for this prospect.</p>
+        <Button variant="secondary" icon={Rocket} onClick={()=>runAndClose(openBuildDemo)}>Build Demo Website</Button>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Activity notes" icon={MessageSquare}>
+        <p>Log DMs, calls, meetings, follow-ups, and internal notes for this prospect.</p>
+        <Button variant="secondary" icon={MessageSquare} onClick={()=>runAndClose(openActivities)}>Open Activity Notes</Button>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Edit / admin" icon={Pencil}>
+        <div className="jiraModalActionRow">
+          <Button variant="secondary" icon={Pencil} onClick={()=>runAndClose(startEdit)}>Edit Prospect</Button>
+          {isAdmin ? <Button variant="danger" icon={Trash2} onClick={()=>{ deleteLead(lead.id); onClose() }}>Delete Prospect</Button> : null}
+        </div>
+      </CollapsibleSection>
+    </div>
+  </Modal>
+}
+
+function CollapsibleSection({ title, icon: Icon, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return <section className={`jiraAccordion ${open ? 'open' : ''}`}>
+    <button type="button" className="jiraAccordionHeader" onClick={()=>setOpen(value=>!value)}>
+      <span>{Icon ? <Icon size={16}/> : null}{title}</span>
+      <ChevronDown size={16}/>
+    </button>
+    {open ? <div className="jiraAccordionBody">{children}</div> : null}
+  </section>
 }
 
 function stageLeadDescription(stage) {

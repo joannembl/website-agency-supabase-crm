@@ -886,3 +886,167 @@
     max-width: 280px;
   }
 }
+
+/* Jira-style Kanban card cleanup */
+.jiraStyleCard {
+  cursor: pointer;
+}
+.jiraStyleCard:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, .28);
+  outline-offset: 3px;
+}
+.jiraStyleCard .pipelineCardDetails.compact {
+  padding: 8px 10px;
+}
+.jiraCardFooter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+  border-top: 1px solid #eef2f7;
+}
+.jiraCardFooter span {
+  text-align: center;
+  color: #94a3b8;
+  font-size: .72rem;
+  font-weight: 850;
+}
+.jiraCardFooter button {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 3px;
+  font-size: .76rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.jiraCardFooter button:hover:not(:disabled) {
+  color: #0f172a;
+}
+.jiraCardFooter button:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+.jiraLeadModal {
+  width: min(920px, 96vw);
+}
+.jiraLeadModalSummary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  margin-bottom: 16px;
+}
+.pipelineAvatar.large {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  font-size: .9rem;
+}
+.jiraLeadModalBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.jiraLeadModalSummary p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.5;
+  font-weight: 650;
+}
+.jiraModalSections {
+  display: grid;
+  gap: 10px;
+}
+.jiraAccordion {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+.jiraAccordionHeader {
+  width: 100%;
+  border: 0;
+  background: #fff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  color: #0f172a;
+  font-weight: 950;
+}
+.jiraAccordionHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.jiraAccordionHeader svg:last-child {
+  transition: transform .16s ease;
+  color: #64748b;
+}
+.jiraAccordion.open .jiraAccordionHeader svg:last-child {
+  transform: rotate(180deg);
+}
+.jiraAccordionBody {
+  border-top: 1px solid #eef2f7;
+  padding: 14px 16px 16px;
+  background: #f8fafc;
+}
+.jiraAccordionBody p {
+  margin: 0 0 12px;
+  color: #475569;
+  line-height: 1.5;
+  font-weight: 650;
+}
+.jiraDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.jiraFieldLabel {
+  display: grid;
+  gap: 7px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-size: .72rem;
+  letter-spacing: .06em;
+  font-weight: 950;
+}
+.jiraFieldLabel select {
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  padding: 0 12px;
+  color: #0f172a;
+  font-size: .95rem;
+  font-weight: 800;
+  background: #fff;
+}
+.jiraModalActionRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+@media (max-width: 700px) {
+  .jiraLeadModalSummary,
+  .jiraDetailGrid {
+    grid-template-columns: 1fr;
+  }
+  .jiraCardFooter {
+    grid-template-columns: 1fr;
+  }
+  .jiraCardFooter span {
+    display: none;
+  }
+}
