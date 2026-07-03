@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, ShieldCheck, UserCog } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
 
@@ -89,6 +89,7 @@ function App() {
   const [teams, setTeams] = useState([])
   const [activeTeamId, setActiveTeamId] = useState(localStorage.getItem('active_team_id') || '')
   const [members, setMembers] = useState([])
+  const [showTeamModal, setShowTeamModal] = useState(false)
   const [leads, setLeads] = useState([])
   const [form, setForm] = useState(blankLead)
   const [query, setQuery] = useState('')
@@ -107,6 +108,10 @@ function App() {
   const connected = Boolean(supabase)
   const activeTeam = teams.find(t => t.id === activeTeamId)
   const pipelineStages = ['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost']
+  const currentMember = members.find(m => m.user_id === session?.user?.id)
+  const currentRole = currentMember?.role || 'member'
+  const isOwner = currentRole === 'owner'
+  const isAdmin = currentRole === 'owner' || currentRole === 'admin'
 
   useEffect(() => {
     if (!supabase) { setAuthReady(true); return }
@@ -326,6 +331,28 @@ function App() {
     setMessage(`Invite code copied: ${activeTeam.invite_code}`)
   }
 
+  function shortUserId(id) {
+    if (!id) return ''
+    return id === session?.user?.id ? 'You' : `${id.slice(0, 8)}…${id.slice(-4)}`
+  }
+
+  async function changeMemberRole(member, nextRole) {
+    if (!isOwner) return setMessage('Only team owners can change roles.')
+    if (member.user_id === session?.user?.id) return setMessage('Owners cannot change their own role from the app.')
+    const { error } = await supabase.rpc('update_team_member_role', { member_team_id: activeTeamId, member_user_id: member.user_id, new_role: nextRole })
+    if (error) return setMessage(error.message)
+    loadMembers(activeTeamId)
+  }
+
+  async function removeMember(member) {
+    if (!isOwner) return setMessage('Only team owners can remove members.')
+    if (member.user_id === session?.user?.id) return setMessage('You cannot remove yourself from the app.')
+    if (!confirm('Remove this team member?')) return
+    const { error } = await supabase.rpc('remove_team_member', { member_team_id: activeTeamId, member_user_id: member.user_id })
+    if (error) return setMessage(error.message)
+    loadMembers(activeTeamId)
+  }
+
   const filtered = useMemo(() => leads.filter(l => {
     const hay = `${l.business_name} ${l.instagram_handle} ${l.category} ${l.city} ${l.notes}`.toLowerCase()
     return hay.includes(query.toLowerCase()) && (status === 'All' || l.status === status) && (category === 'All' || l.category === category)
@@ -360,8 +387,11 @@ function App() {
     </header>
 
     {connected && activeTeam && <section className="teamBar">
-      <div><strong>{activeTeam.name}</strong><span>{members.length} team member{members.length === 1 ? '' : 's'}</span></div>
-      <button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> Invite code: {activeTeam.invite_code}</button>
+      <div><strong>{activeTeam.name}</strong><span>{members.length} team member{members.length === 1 ? '' : 's'} · Your role: {currentRole}</span></div>
+      <div className="teamBarActions">
+        {isAdmin && <button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> Invite code: {activeTeam.invite_code}</button>}
+        <button className="secondaryBtn" onClick={()=>setShowTeamModal(true)}><UserCog size={16}/> Manage team</button>
+      </div>
     </section>}
 
     {message && <div className="notice">{message}</div>}
@@ -377,7 +407,7 @@ function App() {
       <section className="card tableWrap fullBoardCard">
         <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
 
-        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button><button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button></div></td></tr>)}</tbody></table>}
+        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
       </section>
     </main>
 
@@ -404,6 +434,25 @@ function App() {
         </div>
         <div className="modalActions"><button type="button" className="secondaryBtn" onClick={()=>setShowAddModal(false)}>Cancel</button><button type="submit"><Plus size={16}/> Add prospect</button></div>
       </form>
+    </div>}
+
+    {showTeamModal && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setShowTeamModal(false) }}>
+      <div className="editModal teamMembersModal">
+        <div className="modalHeader"><div><span className="eyebrow">Team access</span><h2>Manage Team</h2><p>{activeTeam?.name} · Your role: {currentRole}</p></div><button type="button" className="iconBtn" onClick={()=>setShowTeamModal(false)}><X size={18}/></button></div>
+        {isAdmin && <div className="invitePanel"><div><strong>Invite new member</strong><p>Share this code. New users will join as Members by default.</p></div><button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> {activeTeam?.invite_code}</button></div>}
+        <div className="roleLegend">
+          <div><ShieldCheck size={16}/><strong>Owner</strong><span>Full access, can manage roles and remove members.</span></div>
+          <div><ShieldCheck size={16}/><strong>Admin</strong><span>Can manage prospects, activities, and invite members.</span></div>
+          <div><Users size={16}/><strong>Member</strong><span>Can view, add, edit, and log activity.</span></div>
+        </div>
+        <div className="membersList">
+          {members.map(member=><div className="memberRow" key={member.user_id}>
+            <div><strong>{shortUserId(member.user_id)}</strong><span>{member.user_id}</span></div>
+            {isOwner && member.user_id !== session?.user?.id ? <select value={member.role} onChange={e=>changeMemberRole(member, e.target.value)}>{['owner','admin','member'].map(role=><option key={role}>{role}</option>)}</select> : <span className={`rolePill role${member.role}`}>{member.role}</span>}
+            {isOwner && member.user_id !== session?.user?.id && <button className="textDanger" onClick={()=>removeMember(member)}>Remove</button>}
+          </div>)}
+        </div>
+      </div>
     </div>}
 
     {activityLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setActivityLead(null) }}>
@@ -457,7 +506,7 @@ function App() {
               </div> : activities.map(a=><article className="activityItemV2" key={a.id}>
                 <div className={`activityTypeBadge type${String(a.activity_type || 'Note').replace(/[^a-zA-Z]/g,'')}`}>{a.activity_type}</div>
                 <div className="activityContentV2">
-                  <div className="activityHeaderV2"><span>{formatActivityDate(a.created_at)}</span><button type="button" className="textDanger" onClick={()=>deleteActivity(a.id)} title="Delete activity">Delete</button></div>
+                  <div className="activityHeaderV2"><span>{formatActivityDate(a.created_at)}</span>{isAdmin && <button type="button" className="textDanger" onClick={()=>deleteActivity(a.id)} title="Delete activity">Delete</button>}</div>
                   <p>{a.body}</p>
                 </div>
               </article>)}
