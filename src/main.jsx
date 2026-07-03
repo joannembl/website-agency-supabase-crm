@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save } from 'lucide-react'
+import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Lock, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { supabase } from './supabase'
 import './styles.css'
 
@@ -97,9 +97,11 @@ function App() {
   const [message, setMessage] = useState('')
   const [editingLead, setEditingLead] = useState(null)
   const [editForm, setEditForm] = useState(blankLead)
+  const [viewMode, setViewMode] = useState(localStorage.getItem('crm_view_mode') || 'kanban')
 
   const connected = Boolean(supabase)
   const activeTeam = teams.find(t => t.id === activeTeamId)
+  const pipelineStages = ['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost']
 
   useEffect(() => {
     if (!supabase) { setAuthReady(true); return }
@@ -167,6 +169,11 @@ function App() {
     const { error } = await supabase.from('leads').insert(payload)
     if (error) setMessage(error.message)
     else { setForm(blankLead); loadLeads() }
+  }
+
+  function setView(nextView) {
+    setViewMode(nextView)
+    localStorage.setItem('crm_view_mode', nextView)
   }
 
   async function updateLead(id, patch) {
@@ -239,6 +246,7 @@ function App() {
   const mrr = leads.filter(l => l.status === 'Won').length * 99
   const demos = leads.filter(l => ['Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won'].includes(l.status)).length
   const noWebsite = leads.filter(l => ['No website','Likely no/weak site','Social-only'].includes(l.website_status)).length
+  const pipelineCounts = pipelineStages.reduce((acc, stage) => { acc[stage] = filtered.filter(l => (l.status || 'Research') === stage).length; return acc }, {})
 
   function exportCsv() {
     const columns = Object.keys(blankLead)
@@ -294,8 +302,9 @@ function App() {
       </form>
 
       <section className="card tableWrap">
-        <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All','Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost'].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
-        <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost'].map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><div className="rowActions"><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button></div></td></tr>)}</tbody></table>
+        <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
+
+        {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className="kanbanColumn" key={stage}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className="kanbanCard" key={l.id}><div className="kanbanTop"><div><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button><button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><div className="rowActions"><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button><button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button></div></td></tr>)}</tbody></table>}
       </section>
     </main>
 
