@@ -1,5 +1,5 @@
-import { X, CheckCheck, Bell, ArrowRight } from 'lucide-react'
-import { Button, Badge, EmptyState } from '../../components/ui'
+import { CheckCheck, Bell, ArrowRight } from 'lucide-react'
+import { Button, Badge, EmptyState, Drawer } from '../../components/ui'
 import { formatNotificationTime, notificationIcon, notificationTone } from './notificationService'
 
 function groupLabel(value) {
@@ -16,8 +16,6 @@ function groupLabel(value) {
 }
 
 export default function NotificationDrawer({ open, notifications, unreadCount, onClose, onMarkRead, onMarkAllRead, onNavigate }) {
-  if (!open) return null
-
   const groups = notifications.reduce((acc, item) => {
     const label = groupLabel(item.created_at || new Date())
     if (!acc[label]) acc[label] = []
@@ -34,38 +32,31 @@ export default function NotificationDrawer({ open, notifications, unreadCount, o
     onClose?.()
   }
 
-  return <div className="notificationOverlay" onMouseDown={onClose}>
-    <aside className="notificationDrawer" onMouseDown={e => e.stopPropagation()}>
-      <div className="notificationDrawerHeader">
-        <div>
-          <h2>Notifications</h2>
-          <p>{unreadCount ? `${unreadCount} unread item${unreadCount === 1 ? '' : 's'}` : 'You are all caught up'}</p>
-        </div>
-        <button className="notificationCloseButton" type="button" onClick={onClose} aria-label="Close notifications"><X size={18}/></button>
-      </div>
-
-      <div className="notificationDrawerActions">
-        <Button variant="secondary" size="sm" icon={CheckCheck} onClick={onMarkAllRead} disabled={!unreadCount}>Mark all read</Button>
-      </div>
-
-      <div className="notificationList">
-        {!notifications.length && <EmptyState icon={Bell} title="No notifications yet" description="Follow-ups, tasks, demo updates, and team activity will appear here." />}
-        {Object.entries(groups).map(([label, items]) => <section className="notificationGroup" key={label}>
-          <h3>{label}</h3>
-          {items.map(item => <button type="button" className={`notificationItem ${item.is_read ? 'isRead' : 'isUnread'}`} key={item.id} onClick={() => handleOpen(item)}>
-            <div className="notificationIcon" aria-hidden="true">{notificationIcon(item.type)}</div>
-            <div className="notificationContent">
-              <div className="notificationTitleRow">
-                <strong>{item.title}</strong>
-                <Badge tone={notificationTone(item.type)}>{item.type?.replaceAll('_', ' ') || 'update'}</Badge>
-              </div>
-              <p>{item.message}</p>
-              <span>{formatNotificationTime(item.created_at)}</span>
+  return <Drawer
+    open={open}
+    title="Notifications"
+    description={unreadCount ? `${unreadCount} unread item${unreadCount === 1 ? '' : 's'}` : 'You are all caught up'}
+    onClose={onClose}
+    className="notificationDrawer"
+    footer={<Button variant="secondary" size="sm" icon={CheckCheck} onClick={onMarkAllRead} disabled={!unreadCount}>Mark all read</Button>}
+  >
+    <div className="notificationList">
+      {!notifications.length && <EmptyState icon={Bell} title="No notifications yet" description="Follow-ups, tasks, demo updates, and team activity will appear here." />}
+      {Object.entries(groups).map(([label, items]) => <section className="notificationGroup" key={label}>
+        <h3>{label}</h3>
+        {items.map(item => <button type="button" className={`notificationItem ${item.is_read ? 'isRead' : 'isUnread'}`} key={item.id} onClick={() => handleOpen(item)}>
+          <div className="notificationIcon" aria-hidden="true">{notificationIcon(item.type)}</div>
+          <div className="notificationContent">
+            <div className="notificationTitleRow">
+              <strong>{item.title}</strong>
+              <Badge tone={notificationTone(item.type)}>{item.type?.replaceAll('_', ' ') || 'update'}</Badge>
             </div>
-            <ArrowRight size={15} className="notificationArrow"/>
-          </button>)}
-        </section>)}
-      </div>
-    </aside>
-  </div>
+            <p>{item.message}</p>
+            <span>{formatNotificationTime(item.created_at)}</span>
+          </div>
+          <ArrowRight size={15} className="notificationArrow"/>
+        </button>)}
+      </section>)}
+    </div>
+  </Drawer>
 }

@@ -14,6 +14,7 @@ import * as demoBuilder from './features/demos/demoBuilder'
 import * as demoService from './features/demos/demoService'
 
 import { AppLayout, Sidebar, Topbar } from './layout'
+import { Toast, PageSkeleton } from './components/ui'
 import DashboardView from './features/dashboard/DashboardView'
 import PlaceholderModule from './features/modules/PlaceholderModule'
 import LeadBoard from './features/leads/LeadBoard'
@@ -481,7 +482,7 @@ function App() {
     a.href = URL.createObjectURL(blob); a.download = 'website-agency-crm-leads.csv'; a.click()
   }
 
-  if (!authReady) return <div className="loading">Loading CRM...</div>
+  if (!authReady) return <PageSkeleton />
   if (supabase && !session) return <AuthScreen onAuthed={setSession} />
   if (supabase && session && teams.length === 0) return <TeamSetup onTeamReady={(team)=>{ setTeams([team]); setActiveTeamId(team.id); localStorage.setItem('active_team_id', team.id) }} />
 
@@ -504,7 +505,7 @@ function App() {
     />}
   >
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast message={toast} onClose={()=>setToast('')} />
       {message && <div className="notice">{message}</div>}
 
       {activeNav === 'Dashboard' && <DashboardView
