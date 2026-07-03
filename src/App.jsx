@@ -1,9 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Search, Plus, ExternalLink, Download, RefreshCw, LogOut, Users, Copy, Pencil, Trash2, X, Save, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, ShieldCheck, UserCog, Monitor, Rocket, Link2, Briefcase, FileText, CheckSquare, DollarSign, BarChart3, Settings, Home } from 'lucide-react'
 import { supabase } from './supabase'
 import AuthScreen from './components/AuthScreen'
 import TeamSetup from './components/TeamSetup'
-import { demoStatuses, blankDemo, blankLead } from './constants'
+import { blankDemo, blankLead, pipelineStages } from './constants'
+
+import Sidebar from './layout/Sidebar'
+import WorkspaceHeader from './layout/WorkspaceHeader'
+import TeamBar from './layout/TeamBar'
+import DashboardView from './features/dashboard/DashboardView'
+import PlaceholderModule from './features/modules/PlaceholderModule'
+import LeadBoard from './features/leads/LeadBoard'
+import LeadFormModal from './features/leads/LeadFormModal'
+import EditLeadModal from './features/leads/EditLeadModal'
+import TeamModal from './features/team/TeamModal'
+import ActivityModal from './features/activities/ActivityModal'
+import BuildDemoModal from './features/demos/BuildDemoModal'
+import DemoManagerModal from './features/demos/DemoManagerModal'
 import './styles.css'
 
 function App() {
@@ -43,7 +55,6 @@ function App() {
 
   const connected = Boolean(supabase)
   const activeTeam = teams.find(t => t.id === activeTeamId)
-  const pipelineStages = ['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost']
   const currentMember = members.find(m => m.user_id === session?.user?.id)
   const currentRole = currentMember?.role || 'member'
   const isOwner = currentRole === 'owner'
@@ -763,346 +774,147 @@ function App() {
   if (supabase && !session) return <AuthScreen onAuthed={setSession} />
   if (supabase && session && teams.length === 0) return <TeamSetup onTeamReady={(team)=>{ setTeams([team]); setActiveTeamId(team.id); localStorage.setItem('active_team_id', team.id) }} />
 
-  const navItems = [
-    { name: 'Dashboard', icon: Home },
-    { name: 'Prospects', icon: Users },
-    { name: 'Pipeline', icon: LayoutDashboard },
-    { name: 'Demo Websites', icon: Monitor },
-    { name: 'Clients', icon: Briefcase },
-    { name: 'Proposals', icon: FileText },
-    { name: 'Tasks', icon: CheckSquare },
-    { name: 'Revenue', icon: DollarSign },
-    { name: 'Analytics', icon: BarChart3 },
-    { name: 'Settings', icon: Settings },
-  ]
-
   const showLeadBoard = ['Prospects','Pipeline','Demo Websites'].includes(activeNav)
+  const userEmail = session?.user?.email
 
   return <div className="appShell">
-    <aside className="sidebar">
-      <div className="sidebarBrand">
-        <div className="brandMark">CD</div>
-        <div><strong>Crafted Digital</strong><span>Agency CRM</span></div>
-      </div>
-      <nav className="sideNav">
-        {navItems.map(item => {
-          const Icon = item.icon
-          return <button key={item.name} className={activeNav === item.name ? 'active' : ''} onClick={()=>setNav(item.name)}><Icon size={18}/><span>{item.name}</span></button>
-        })}
-      </nav>
-      <div className="sidebarFooter">
-        {connected && activeTeam && <span>{activeTeam.name}</span>}
-        {connected && <small>{session?.user?.email}</small>}
-      </div>
-    </aside>
+    <Sidebar activeNav={activeNav} setNav={setNav} connected={connected} activeTeam={activeTeam} userEmail={userEmail} />
 
     <div className="workspace">
-      <header className="workspaceHeader">
-        <div><h1>{activeNav}</h1><p>{connected ? `Signed in as ${session?.user?.email}` : 'Local mode — add Supabase keys to sync online'}</p></div>
-        <div className="headerActions">
-          {connected && <select className="teamSelect" value={activeTeamId} onChange={e=>setActiveTeamId(e.target.value)}>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>}
-          <button onClick={()=>loadLeads()}><RefreshCw size={16}/> Refresh</button>
-          {connected && <button onClick={signOut}><LogOut size={16}/> Sign out</button>}
-        </div>
-      </header>
+      <WorkspaceHeader
+        activeNav={activeNav}
+        connected={connected}
+        userEmail={userEmail}
+        teams={teams}
+        activeTeamId={activeTeamId}
+        setActiveTeamId={setActiveTeamId}
+        loadLeads={loadLeads}
+        signOut={signOut}
+      />
 
-      {connected && activeTeam && <section className="teamBar">
-        <div><strong>{activeTeam.name}</strong><span>{members.length} team member{members.length === 1 ? '' : 's'} · Your role: {currentRole}</span></div>
-        <div className="teamBarActions">
-          {isAdmin && <button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> Invite code: {activeTeam.invite_code}</button>}
-          <button className="secondaryBtn" onClick={()=>setShowTeamModal(true)}><UserCog size={16}/> Manage team</button>
-        </div>
-      </section>}
+      <TeamBar
+        connected={connected}
+        activeTeam={activeTeam}
+        members={members}
+        currentRole={currentRole}
+        isAdmin={isAdmin}
+        copyInvite={copyInvite}
+        onManageTeam={()=>setShowTeamModal(true)}
+      />
 
       {toast && <div className="toast">{toast}</div>}
       {message && <div className="notice">{message}</div>}
 
-      {activeNav === 'Dashboard' && <>
-        <section className="stats">
-          <div><span>Total Leads</span><strong>{leads.length}</strong></div>
-          <div><span>No/Weak Website</span><strong>{noWebsite}</strong></div>
-          <div><span>Demos/Pipeline</span><strong>{demos}</strong></div>
-          <div><span>Projected MRR</span><strong>${mrr}</strong></div>
-        </section>
-        <main className="dashboardGrid">
-          <section className="card dashboardPanel">
-            <div className="sectionTitle"><h2>Today’s Command Center</h2><p>Quick snapshot of your agency pipeline.</p></div>
-            <div className="dashboardMetrics">
-              {pipelineStages.map(stage => <div key={stage}><span>{stage}</span><strong>{pipelineCounts[stage] || 0}</strong></div>)}
-            </div>
-          </section>
-          <section className="card dashboardPanel">
-            <div className="sectionTitle"><h2>Next best workflow</h2><p>Use the left navigation to move between the CRM modules.</p></div>
-            <div className="emptyStateList">
-              <button onClick={()=>setNav('Pipeline')}><LayoutDashboard size={16}/> Open Kanban Pipeline</button>
-              <button onClick={()=>setNav('Prospects')}><Users size={16}/> Review Prospect Table</button>
-              <button onClick={()=>setNav('Demo Websites')}><Monitor size={16}/> Manage Demo Websites</button>
-            </div>
-          </section>
-        </main>
-      </>}
+      {activeNav === 'Dashboard' && <DashboardView
+        leads={leads}
+        noWebsite={noWebsite}
+        demos={demos}
+        mrr={mrr}
+        pipelineStages={pipelineStages}
+        pipelineCounts={pipelineCounts}
+        setNav={setNav}
+      />}
 
-      {showLeadBoard && <>
-        <section className="stats compactStats">
-          <div><span>Total Leads</span><strong>{leads.length}</strong></div>
-          <div><span>No/Weak Website</span><strong>{noWebsite}</strong></div>
-          <div><span>Demos/Pipeline</span><strong>{demos}</strong></div>
-          <div><span>Projected MRR</span><strong>${mrr}</strong></div>
-        </section>
+      {showLeadBoard && <LeadBoard
+        leads={leads}
+        noWebsite={noWebsite}
+        demos={demos}
+        mrr={mrr}
+        query={query}
+        setQuery={setQuery}
+        status={status}
+        setStatus={setStatus}
+        category={category}
+        setCategory={setCategory}
+        pipelineStages={pipelineStages}
+        viewMode={viewMode}
+        setView={setView}
+        setShowAddModal={setShowAddModal}
+        exportCsv={exportCsv}
+        draggingLeadId={draggingLeadId}
+        setDraggingLeadId={setDraggingLeadId}
+        handleDragStart={handleDragStart}
+        handleDrop={handleDrop}
+        pipelineCounts={pipelineCounts}
+        filtered={filtered}
+        demoStatusForLead={demoStatusForLead}
+        updateLead={updateLead}
+        openDemoManager={openDemoManager}
+        openBuildDemo={openBuildDemo}
+        openActivities={openActivities}
+        startEdit={startEdit}
+        deleteLead={deleteLead}
+        isAdmin={isAdmin}
+      />}
 
-        <main className="fullBoardMain">
-          <section className="card tableWrap fullBoardCard">
-            <div className="toolbar"><div className="search"><Search size={16}/><input placeholder="Search leads" value={query} onChange={e=>setQuery(e.target.value)}/></div><select value={status} onChange={e=>setStatus(e.target.value)}>{['All',...pipelineStages].map(x=><option key={x}>{x}</option>)}</select><select value={category} onChange={e=>setCategory(e.target.value)}>{['All','Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select><div className="viewToggle"><button type="button" className={viewMode === 'kanban' ? 'active' : ''} onClick={()=>setView('kanban')}><LayoutDashboard size={16}/> Kanban</button><button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={()=>setView('table')}><Table2 size={16}/> Table</button></div><button type="button" className="addLeadBtn" onClick={()=>setShowAddModal(true)}><Plus size={16}/> Add Prospect</button><button onClick={exportCsv}><Download size={16}/> CSV</button></div>
-
-            {viewMode === 'kanban' ? <div className="kanbanBoard">{pipelineStages.map((stage, stageIndex)=><section className={`kanbanColumn ${draggingLeadId ? 'dropReady' : ''}`} key={stage} onDragOver={e=>e.preventDefault()} onDrop={e=>handleDrop(e, stage)}><div className="kanbanHeader"><strong>{stage}</strong><span>{pipelineCounts[stage] || 0}</span></div><div className="kanbanCards">{filtered.filter(l => (l.status || 'Research') === stage).map(l=><article className={`kanbanCard ${draggingLeadId === l.id ? 'dragging' : ''}`} key={l.id} draggable onDragStart={e=>handleDragStart(e, l.id)} onDragEnd={()=>setDraggingLeadId(null)}><div className="kanbanTop"><div className="dragHandle" title="Drag to another stage"><GripVertical size={16}/></div><div className="kanbanTitle"><strong>{l.business_name}</strong><small>{l.city || 'Phoenix'} · {l.category}</small></div><span className={`priorityBadge priority${l.priority || 'B'}`}>{l.priority || 'B'}</span></div><p>{l.instagram_handle || 'No Instagram added'}</p><div className="kanbanMeta"><span>{l.website_status}</span><span className="demoChip">Demo: {demoStatusForLead(l)}</span>{l.google_reviews ? <span>{l.google_reviews} reviews</span> : null}</div>{l.notes && <p className="kanbanNotes">{l.notes}</p>}<div className="kanbanActions"><button className="iconBtn" disabled={stageIndex === 0} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex-1]})} title="Move back"><ChevronLeft size={15}/></button><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}<button className="iconBtn" disabled={stageIndex === pipelineStages.length - 1} onClick={()=>updateLead(l.id,{status:pipelineStages[stageIndex+1]})} title="Move forward"><ChevronRight size={15}/></button></div></article>)}</div></section>)}</div> : <table><thead><tr><th>Business</th><th>IG</th><th>Category</th><th>Website</th><th>Priority</th><th>Status</th><th>Notes</th><th>Activity</th><th>Actions</th></tr></thead><tbody>{filtered.map(l=><tr key={l.id}><td><strong>{l.business_name}</strong><small>{l.city}</small></td><td>{l.instagram_handle}</td><td>{l.category}</td><td>{l.website_url ? <a href={l.website_url} target="_blank">{l.website_status} <ExternalLink size={12}/></a> : l.website_status}</td><td><select value={l.priority || 'B'} onChange={e=>updateLead(l.id,{priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></td><td><select value={l.status || 'Research'} onChange={e=>updateLead(l.id,{status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></td><td>{l.notes}</td><td><button className="secondaryBtn compactBtn" onClick={()=>openActivities(l)}><MessageSquare size={14}/> Log</button></td><td><div className="rowActions"><button className="iconBtn" onClick={()=>openDemoManager(l)} title="Demo website"><Monitor size={15}/></button><button className="iconBtn" onClick={()=>openBuildDemo(l)} title="Build demo website"><Rocket size={15}/></button><button className="iconBtn" onClick={()=>openActivities(l)} title="Activity notes"><MessageSquare size={15}/></button><button className="iconBtn" onClick={()=>startEdit(l)} title="Edit prospect"><Pencil size={15}/></button>{isAdmin && <button className="iconBtn dangerBtn" onClick={()=>deleteLead(l.id)} title="Delete prospect"><Trash2 size={15}/></button>}</div></td></tr>)}</tbody></table>}
-          </section>
-        </main>
-      </>}
-
-      {!showLeadBoard && activeNav !== 'Dashboard' && <main className="modulePlaceholder">
-        <section className="card placeholderCard">
-          <div className="placeholderIcon">{activeNav.slice(0,1)}</div>
-          <h2>{activeNav}</h2>
-          <p>This section is now reserved in the app navigation. We can build this module next without crowding the pipeline view.</p>
-          {activeNav === 'Proposals' && <p>Next: generate proposals using your pricing one-pager and service agreement.</p>}
-          {activeNav === 'Tasks' && <p>Next: daily follow-up dashboard with due dates and assigned users.</p>}
-          {activeNav === 'Revenue' && <p>Next: MRR, setup fees, close rate, and monthly goal tracking.</p>}
-          {activeNav === 'Settings' && <button className="secondaryBtn" onClick={()=>setShowTeamModal(true)}><UserCog size={16}/> Manage Team</button>}
-        </section>
-      </main>}
+      {!showLeadBoard && activeNav !== 'Dashboard' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
     </div>
 
-    {showAddModal && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setShowAddModal(false) }}>
-      <form className="editModal" onSubmit={addLead}>
-        <div className="modalHeader"><div><h2>Add Prospect</h2><p>Create a new lead in the Research stage.</p></div><button type="button" className="iconBtn" onClick={()=>setShowAddModal(false)}><X size={18}/></button></div>
-        <div className="editGrid">
-          <label>Business name<input required placeholder="Business name" value={form.business_name} onChange={e=>setForm({...form,business_name:e.target.value})}/></label>
-          <label>Instagram handle<input placeholder="@handle" value={form.instagram_handle} onChange={e=>setForm({...form,instagram_handle:e.target.value})}/></label>
-          <label>Category<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{['Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>City<input placeholder="Phoenix" value={form.city} onChange={e=>setForm({...form,city:e.target.value})}/></label>
-          <label>Followers<input placeholder="Followers" value={form.followers} onChange={e=>setForm({...form,followers:e.target.value})}/></label>
-          <label>Website status<select value={form.website_status} onChange={e=>setForm({...form,website_status:e.target.value})}>{['Needs verification','No website','Likely no/weak site','Social-only','Website found','Strong website'].map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>Website URL<input placeholder="https://..." value={form.website_url} onChange={e=>setForm({...form,website_url:e.target.value})}/></label>
-          <label>Email<input placeholder="email@example.com" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label>
-          <label>Phone<input placeholder="Phone" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label>
-          <label>Google rating<input placeholder="4.9" value={form.google_rating} onChange={e=>setForm({...form,google_rating:e.target.value})}/></label>
-          <label>Google reviews<input placeholder="125" value={form.google_reviews} onChange={e=>setForm({...form,google_reviews:e.target.value})}/></label>
-          <label>Priority<select value={form.priority} onChange={e=>setForm({...form,priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></label>
-          <label className="fullWidth">Notes<textarea placeholder="Notes" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
-        </div>
-        <div className="modalActions"><button type="button" className="secondaryBtn" onClick={()=>setShowAddModal(false)}>Cancel</button><button type="submit"><Plus size={16}/> Add prospect</button></div>
-      </form>
-    </div>}
+    <LeadFormModal open={showAddModal} form={form} setForm={setForm} onClose={()=>setShowAddModal(false)} addLead={addLead} />
 
-    {showTeamModal && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setShowTeamModal(false) }}>
-      <div className="editModal teamMembersModal">
-        <div className="modalHeader"><div><span className="eyebrow">Team access</span><h2>Manage Team</h2><p>{activeTeam?.name} · Your role: {currentRole}</p></div><button type="button" className="iconBtn" onClick={()=>setShowTeamModal(false)}><X size={18}/></button></div>
-        {isAdmin && <div className="invitePanel"><div><strong>Invite new member</strong><p>Share this code. New users will join as Members by default.</p></div><button className="secondaryBtn" onClick={copyInvite}><Copy size={16}/> {activeTeam?.invite_code}</button></div>}
-        <div className="roleLegend">
-          <div><ShieldCheck size={16}/><strong>Owner</strong><span>Full access, can manage roles and remove members.</span></div>
-          <div><ShieldCheck size={16}/><strong>Admin</strong><span>Can manage prospects, activities, and invite members.</span></div>
-          <div><Users size={16}/><strong>Member</strong><span>Can view, add, edit, and log activity.</span></div>
-        </div>
-        <div className="membersList">
-          {members.map(member=><div className="memberRow" key={member.user_id}>
-            <div><strong>{shortUserId(member.user_id)}</strong><span>{member.user_id}</span></div>
-            {isOwner && member.user_id !== session?.user?.id ? <select value={member.role} onChange={e=>changeMemberRole(member, e.target.value)}>{['owner','admin','member'].map(role=><option key={role}>{role}</option>)}</select> : <span className={`rolePill role${member.role}`}>{member.role}</span>}
-            {isOwner && member.user_id !== session?.user?.id && <button className="textDanger" onClick={()=>removeMember(member)}>Remove</button>}
-          </div>)}
-        </div>
-      </div>
-    </div>}
+    <TeamModal
+      open={showTeamModal}
+      activeTeam={activeTeam}
+      currentRole={currentRole}
+      isAdmin={isAdmin}
+      isOwner={isOwner}
+      members={members}
+      session={session}
+      copyInvite={copyInvite}
+      shortUserId={shortUserId}
+      changeMemberRole={changeMemberRole}
+      removeMember={removeMember}
+      onClose={()=>setShowTeamModal(false)}
+    />
 
+    <BuildDemoModal
+      buildLead={buildLead}
+      buildForm={buildForm}
+      setBuildForm={setBuildForm}
+      buildBrief={buildBrief}
+      setBuildBrief={setBuildBrief}
+      generatedSiteCopy={generatedSiteCopy}
+      generatedSiteHtml={generatedSiteHtml}
+      buildSaving={buildSaving}
+      generateDemoBrief={generateDemoBrief}
+      generateTemplateSite={generateTemplateSite}
+      downloadGeneratedHtml={downloadGeneratedHtml}
+      saveBuildDemo={saveBuildDemo}
+      slugify={slugify}
+      onClose={()=>setBuildLead(null)}
+    />
 
-    {buildLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setBuildLead(null) }}>
-      <form className="editModal buildDemoModal" onSubmit={saveBuildDemo}>
-        <div className="modalHeader">
-          <div><span className="eyebrow">V2 template generator</span><h2>Build Demo Website</h2><p>{buildLead.business_name}</p></div>
-          <button type="button" className="iconBtn" onClick={()=>setBuildLead(null)}><X size={18}/></button>
-        </div>
-        <div className="buildDemoGrid">
-          <section className="buildDemoForm">
-            <h3>Demo inputs</h3>
-            <p>Choose a niche template, generate the page copy, and download a starter index.html for the demo site.</p>
-            <label>Template
-              <select value={buildForm.template} onChange={e=>setBuildForm({...buildForm, template:e.target.value})}>{['Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select>
-            </label>
-            <label>Style direction
-              <select value={buildForm.style} onChange={e=>setBuildForm({...buildForm, style:e.target.value})}>{['Modern / clean','Luxury / premium','Bold performance','Minimal black & white','Friendly local business','Instagram portfolio style'].map(x=><option key={x}>{x}</option>)}</select>
-            </label>
-            <label>Services / packages to feature
-              <textarea placeholder="Example: Full detail, ceramic coating, paint correction, maintenance wash..." value={buildForm.services} onChange={e=>setBuildForm({...buildForm, services:e.target.value})}></textarea>
-            </label>
-            <label>Photo / content notes
-              <textarea placeholder="Example: Use IG photos later, placeholder hero for now, include before/after gallery..." value={buildForm.photos} onChange={e=>setBuildForm({...buildForm, photos:e.target.value})}></textarea>
-            </label>
-            <label>Extra build notes
-              <textarea placeholder="Anything specific you want included in this demo?" value={buildForm.notes} onChange={e=>setBuildForm({...buildForm, notes:e.target.value})}></textarea>
-            </label>
-            <div className="modalActions inlineActions">
-              <button type="button" className="secondaryBtn" onClick={()=>setBuildBrief(generateDemoBrief())}><Rocket size={16}/> Generate brief</button>
-              <button type="button" className="secondaryBtn" onClick={generateTemplateSite}><Monitor size={16}/> Generate site</button>
-              <button type="button" className="secondaryBtn" onClick={downloadGeneratedHtml} disabled={!buildLead}><Download size={16}/> Download index.html</button>
-              <button type="submit" disabled={buildSaving}><Save size={16}/> {buildSaving ? 'Saving...' : 'Save as Building'}</button>
-            </div>
-          </section>
-          <aside className="buildDemoPreview">
-            <h3>Generated output</h3>
-            <p>The brief and generated copy save to Demo Manager. Download exports the static starter file.</p>
-            <div className="builderTabs">
-              <button type="button" className="active">Brief</button>
-              <button type="button" onClick={generateTemplateSite}>Refresh generated site</button>
-            </div>
-            <textarea value={buildBrief || generateDemoBrief()} onChange={e=>setBuildBrief(e.target.value)}></textarea>
-            {generatedSiteCopy && <div className="generatedCopy"><h4>Homepage copy generated</h4><pre>{generatedSiteCopy}</pre></div>}
-            {generatedSiteHtml && <div className="generatedHtmlBox"><h4>Starter index.html ready</h4><p>{slugify(buildLead?.business_name)}-index.html</p><button type="button" className="secondaryBtn" onClick={downloadGeneratedHtml}><Download size={16}/> Download HTML</button></div>}
-          </aside>
-        </div>
-      </form>
-    </div>}
+    <DemoManagerModal
+      demoLead={demoLead}
+      demoForm={demoForm}
+      setDemoForm={setDemoForm}
+      demoDirty={demoDirty}
+      demoSaving={demoSaving}
+      saveDemo={saveDemo}
+      requestCloseDemoManager={requestCloseDemoManager}
+      markDemoSent={markDemoSent}
+      markDemoLive={markDemoLive}
+    />
 
-    {demoLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') requestCloseDemoManager() }}>
-      <form className="editModal demoManagerModal" onSubmit={saveDemo}>
-        <div className="modalHeader demoHeader">
-          <div>
-            <span className="eyebrow">Demo website manager</span>
-            <h2>{demoLead.business_name}</h2>
-            <p>Track the preview site from build → sent → approved → live.</p>
-          </div>
-          <button type="button" className="iconBtn" onClick={requestCloseDemoManager}><X size={18}/></button>
-        </div>
+    <ActivityModal
+      activityLead={activityLead}
+      activities={activities}
+      activityForm={activityForm}
+      setActivityForm={setActivityForm}
+      addActivity={addActivity}
+      formatActivityDate={formatActivityDate}
+      deleteActivity={deleteActivity}
+      isAdmin={isAdmin}
+      onClose={()=>setActivityLead(null)}
+    />
 
-        <div className="demoProgress">
-          {demoStatuses.map(status => <button type="button" key={status} className={demoForm.demo_status === status ? 'active' : ''} onClick={()=>setDemoForm({...demoForm, demo_status: status})}>{status}</button>)}
-        </div>
-
-        <div className="demoManagerGrid">
-          <section className="demoMainPanel">
-            <div className="editGrid">
-              <label>Preview / Demo URL<input placeholder="https://business-demo.netlify.app" value={demoForm.demo_url || ''} onChange={e=>setDemoForm({...demoForm,demo_url:e.target.value})}/></label>
-              <label>Live URL<input placeholder="https://clientdomain.com" value={demoForm.live_url || ''} onChange={e=>setDemoForm({...demoForm,live_url:e.target.value})}/></label>
-              <label>GitHub repo<input placeholder="https://github.com/..." value={demoForm.github_repo || ''} onChange={e=>setDemoForm({...demoForm,github_repo:e.target.value})}/></label>
-              <label>Hosting provider<select value={demoForm.hosting_provider || 'Netlify'} onChange={e=>setDemoForm({...demoForm,hosting_provider:e.target.value})}>{['Netlify','Cloudflare Pages','GitHub Pages','Vercel','Other'].map(x=><option key={x}>{x}</option>)}</select></label>
-              <label>Deploy status<input placeholder="Example: Deployed / Needs images / Waiting on domain" value={demoForm.deploy_status || ''} onChange={e=>setDemoForm({...demoForm,deploy_status:e.target.value})}/></label>
-              <label>Demo status<select value={demoForm.demo_status || 'Not Started'} onChange={e=>setDemoForm({...demoForm,demo_status:e.target.value})}>{demoStatuses.map(x=><option key={x}>{x}</option>)}</select></label>
-              <label className="fullWidth">Preview notes<textarea placeholder="What still needs to be changed before sending?" value={demoForm.preview_note || ''} onChange={e=>setDemoForm({...demoForm,preview_note:e.target.value})}/></label>
-              <label className="fullWidth">Client feedback / revision notes<textarea placeholder="Owner feedback, requested changes, launch notes..." value={demoForm.feedback || ''} onChange={e=>setDemoForm({...demoForm,feedback:e.target.value})}/></label>
-              <div className="fullWidth inlineSaveRow">
-                <button type="button" className="secondaryBtn" disabled={!demoDirty || demoSaving} onClick={saveDemo}><Save size={16}/> {demoSaving ? 'Saving...' : 'Save notes'}</button>
-                <span>{demoDirty ? 'Unsaved changes' : 'All demo changes saved'} · Cmd/Ctrl + S</span>
-              </div>
-            </div>
-          </section>
-
-          <aside className="demoSidePanel">
-            <h3>Quick actions</h3>
-            <p>Use these as the demo moves through your sales workflow.</p>
-            <div className="demoQuickActions">
-              {demoForm.demo_url && <a className="secondaryBtn" href={demoForm.demo_url} target="_blank"><ExternalLink size={16}/> Open demo</a>}
-              {demoForm.github_repo && <a className="secondaryBtn" href={demoForm.github_repo} target="_blank"><Link2 size={16}/> Open repo</a>}
-              <button type="button" className="secondaryBtn" onClick={()=>setDemoForm({...demoForm, demo_status:'Ready', deploy_status: demoForm.deploy_status || 'Ready to send'})}><Rocket size={16}/> Mark ready</button>
-              <button type="button" className="secondaryBtn" onClick={markDemoSent}><MessageSquare size={16}/> Mark sent</button>
-              <button type="button" className="secondaryBtn" onClick={markDemoLive}><Monitor size={16}/> Mark live</button>
-            </div>
-            <div className="demoChecklist">
-              <strong>Launch checklist</strong>
-              <span>□ Demo link saved</span>
-              <span>□ Real photos/content added</span>
-              <span>□ Sent to prospect</span>
-              <span>□ Revisions completed</span>
-              <span>□ Domain/live URL saved</span>
-            </div>
-          </aside>
-        </div>
-        <div className="modalActions"><button type="button" className="secondaryBtn" onClick={requestCloseDemoManager}>Close</button><button type="submit" disabled={!demoDirty || demoSaving}><Save size={16}/> {demoSaving ? 'Saving...' : 'Save demo details'}</button></div>
-      </form>
-    </div>}
-
-    {activityLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setActivityLead(null) }}>
-      <div className="editModal activityModalV2">
-        <div className="activityModalHeader">
-          <div>
-            <span className="eyebrow">Prospect activity</span>
-            <h2>{activityLead.business_name}</h2>
-            <div className="activityLeadMeta">
-              <span>{activityLead.category || 'No category'}</span>
-              <span>{activityLead.city || 'Phoenix'}</span>
-              <span>{activityLead.status || 'Research'}</span>
-            </div>
-          </div>
-          <button type="button" className="iconBtn" onClick={()=>setActivityLead(null)}><X size={18}/></button>
-        </div>
-
-        <div className="activityModalGrid">
-          <section className="activityComposer">
-            <h3>Log a new activity</h3>
-            <p>Track every DM, call, meeting, email, and follow-up so you always know the next step.</p>
-
-            <div className="quickActivityRow">
-              <button type="button" className="quickChip" onClick={()=>setActivityForm({activity_type:'DM', body:'Sent first DM with demo site link.'})}>First DM</button>
-              <button type="button" className="quickChip" onClick={()=>setActivityForm({activity_type:'Follow-up', body:'Followed up after sending the demo link.'})}>Follow-up</button>
-              <button type="button" className="quickChip" onClick={()=>setActivityForm({activity_type:'Call', body:'Called business. No answer / left voicemail.'})}>Call attempt</button>
-              <button type="button" className="quickChip" onClick={()=>setActivityForm({activity_type:'Meeting', body:'Meeting booked to review the demo site.'})}>Meeting booked</button>
-            </div>
-
-            <form className="activityFormV2" onSubmit={addActivity}>
-              <label>Activity type
-                <select value={activityForm.activity_type} onChange={e=>setActivityForm({...activityForm, activity_type:e.target.value})}>{['DM','Call','Meeting','Follow-up','Email','Note'].map(x=><option key={x}>{x}</option>)}</select>
-              </label>
-              <label>What happened?
-                <textarea placeholder="Example: Sent first DM with demo link. They replied asking for pricing." value={activityForm.body} onChange={e=>setActivityForm({...activityForm, body:e.target.value})}></textarea>
-              </label>
-              <button type="submit" disabled={!activityForm.body.trim()}><Plus size={16}/> Add activity</button>
-            </form>
-          </section>
-
-          <section className="activityHistoryPanel">
-            <div className="historyHeader">
-              <h3>Timeline</h3>
-              <span>{activities.length} {activities.length === 1 ? 'entry' : 'entries'}</span>
-            </div>
-            <div className="activityTimelineV2">
-              {activities.length === 0 ? <div className="emptyActivityState">
-                <MessageSquare size={28}/>
-                <strong>No activity yet</strong>
-                <p>Start by logging the first DM, call, meeting, or follow-up.</p>
-              </div> : activities.map(a=><article className="activityItemV2" key={a.id}>
-                <div className={`activityTypeBadge type${String(a.activity_type || 'Note').replace(/[^a-zA-Z]/g,'')}`}>{a.activity_type}</div>
-                <div className="activityContentV2">
-                  <div className="activityHeaderV2"><span>{formatActivityDate(a.created_at)}</span>{isAdmin && <button type="button" className="textDanger" onClick={()=>deleteActivity(a.id)} title="Delete activity">Delete</button>}</div>
-                  <p>{a.body}</p>
-                </div>
-              </article>)}
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>}
-
-    {editingLead && <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') setEditingLead(null) }}>
-      <form className="editModal" onSubmit={saveEdit}>
-        <div className="modalHeader"><div><h2>Edit Prospect</h2><p>{editingLead.business_name}</p></div><button type="button" className="iconBtn" onClick={()=>setEditingLead(null)}><X size={18}/></button></div>
-        <div className="editGrid">
-          <label>Business name<input required value={editForm.business_name || ''} onChange={e=>setEditForm({...editForm,business_name:e.target.value})}/></label>
-          <label>Instagram handle<input value={editForm.instagram_handle || ''} onChange={e=>setEditForm({...editForm,instagram_handle:e.target.value})}/></label>
-          <label>Category<select value={editForm.category || 'Other'} onChange={e=>setEditForm({...editForm,category:e.target.value})}>{['Mobile Detailing','Detail Shop','Tint / PPF','Wrap Shop','Repair Shop','Mobile Mechanic','Performance Shop','Automotive Photographer','Wheel Repair','Other'].map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>City<input value={editForm.city || ''} onChange={e=>setEditForm({...editForm,city:e.target.value})}/></label>
-          <label>Followers<input value={editForm.followers || ''} onChange={e=>setEditForm({...editForm,followers:e.target.value})}/></label>
-          <label>Website status<select value={editForm.website_status || 'Needs verification'} onChange={e=>setEditForm({...editForm,website_status:e.target.value})}>{['Needs verification','No website','Likely no/weak site','Social-only','Website found','Strong website'].map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>Website URL<input value={editForm.website_url || ''} onChange={e=>setEditForm({...editForm,website_url:e.target.value})}/></label>
-          <label>Email<input value={editForm.email || ''} onChange={e=>setEditForm({...editForm,email:e.target.value})}/></label>
-          <label>Phone<input value={editForm.phone || ''} onChange={e=>setEditForm({...editForm,phone:e.target.value})}/></label>
-          <label>Google rating<input value={editForm.google_rating || ''} onChange={e=>setEditForm({...editForm,google_rating:e.target.value})}/></label>
-          <label>Google reviews<input value={editForm.google_reviews || ''} onChange={e=>setEditForm({...editForm,google_reviews:e.target.value})}/></label>
-          <label>Priority<select value={editForm.priority || 'B'} onChange={e=>setEditForm({...editForm,priority:e.target.value})}>{['A','B','C','D'].map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>Status<select value={editForm.status || 'Research'} onChange={e=>setEditForm({...editForm,status:e.target.value})}>{['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost'].map(x=><option key={x}>{x}</option>)}</select></label>
-          <label className="fullWidth">Notes<textarea value={editForm.notes || ''} onChange={e=>setEditForm({...editForm,notes:e.target.value})}/></label>
-        </div>
-        <div className="modalActions"><button type="button" className="secondaryBtn" onClick={()=>setEditingLead(null)}>Cancel</button><button type="submit"><Save size={16}/> Save changes</button></div>
-      </form>
-    </div>}
-
+    <EditLeadModal
+      editingLead={editingLead}
+      editForm={editForm}
+      setEditForm={setEditForm}
+      onClose={()=>setEditingLead(null)}
+      saveEdit={saveEdit}
+    />
   </div>
 }
 

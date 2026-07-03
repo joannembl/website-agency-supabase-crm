@@ -1,3 +1,22 @@
+export const pipelineStages = ['Research','Demo Built','DM Sent','Follow-up','Meeting','Proposal','Won','Lost']
+
+export const leadCategories = [
+  'Mobile Detailing',
+  'Detail Shop',
+  'Tint / PPF',
+  'Wrap Shop',
+  'Repair Shop',
+  'Mobile Mechanic',
+  'Performance Shop',
+  'Automotive Photographer',
+  'Wheel Repair',
+  'Other'
+]
+
+export const websiteStatuses = ['Needs verification','No website','Likely no/weak site','Social-only','Website found','Strong website']
+
+export const priorities = ['A','B','C','D']
+
 export const demoStatuses = ['Not Started','Building','Ready','Sent','Revisions','Approved','Live','Archived']
 
 export const blankDemo = {
