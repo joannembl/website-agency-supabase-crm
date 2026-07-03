@@ -26,6 +26,7 @@ import BuildDemoModal from './features/demos/BuildDemoModal'
 import DemoManagerModal from './features/demos/DemoManagerModal'
 import TasksView from './features/tasks/TasksView'
 import TaskFormModal, { blankTask } from './features/tasks/TaskFormModal'
+import ProspectWorkspace from './features/workspace/ProspectWorkspace'
 import NotificationDrawer from './features/notifications/NotificationDrawer'
 import CommandPalette from './features/command/CommandPalette'
 import * as taskService from './features/tasks/taskService'
@@ -77,6 +78,7 @@ function App() {
   const [taskSaving, setTaskSaving] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [workspaceLeadId, setWorkspaceLeadId] = useState(null)
 
   const connected = Boolean(supabase)
   const normalizeDemoForm = demoBuilder.normalizeDemoForm
@@ -486,7 +488,8 @@ function App() {
   if (supabase && !session) return <AuthScreen onAuthed={setSession} />
   if (supabase && session && teams.length === 0) return <TeamSetup onTeamReady={(team)=>{ setTeams([team]); setActiveTeamId(team.id); localStorage.setItem('active_team_id', team.id) }} />
 
-  const showLeadBoard = ['Prospects','Pipeline','Demo Websites'].includes(activeNav)
+  const workspaceLead = leads.find(lead => lead.id === workspaceLeadId) || null
+  const showLeadBoard = ['Prospects','Pipeline','Demo Websites'].includes(activeNav) && !workspaceLead
   const userEmail = session?.user?.email
 
   return <AppLayout
@@ -508,7 +511,24 @@ function App() {
       <Toast message={toast} onClose={()=>setToast('')} />
       {message && <div className="notice">{message}</div>}
 
-      {activeNav === 'Dashboard' && <DashboardView
+      {workspaceLead && <ProspectWorkspace
+        lead={workspaceLead}
+        activeTeamId={activeTeamId}
+        tasks={tasks}
+        pipelineStages={pipelineStages}
+        demoStatusForLead={demoStatusForLead}
+        updateLead={updateLead}
+        onBack={()=>setWorkspaceLeadId(null)}
+        openDemoManager={openDemoManager}
+        openBuildDemo={openBuildDemo}
+        openActivities={openActivities}
+        startEdit={startEdit}
+        setShowTaskModal={setShowTaskModal}
+        setTaskForm={setTaskForm}
+        blankTask={blankTask}
+      />}
+
+      {!workspaceLead && activeNav === 'Dashboard' && <DashboardView
         leads={leads}
         noWebsite={noWebsite}
         demos={demos}
@@ -551,9 +571,10 @@ function App() {
         startEdit={startEdit}
         deleteLead={deleteLead}
         isAdmin={isAdmin}
+        openWorkspace={(lead)=>setWorkspaceLeadId(lead.id)}
       />}
 
-      {activeNav === 'Tasks' && <TasksView
+      {!workspaceLead && activeNav === 'Tasks' && <TasksView
         tasks={tasks}
         leads={leads}
         query={taskQuery}
@@ -569,7 +590,7 @@ function App() {
         setNav={setNav}
       />}
 
-      {!showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
+      {!workspaceLead && !showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
 
 
     <CommandPalette

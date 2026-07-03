@@ -19,14 +19,14 @@ export default function LeadBoard(props) {
     activeNav = 'Pipeline', leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory,
     pipelineStages, viewMode, setView, setShowAddModal, exportCsv, draggingLeadId, setDraggingLeadId,
     handleDragStart, handleDrop, pipelineCounts, filtered, demoStatusForLead, updateLead,
-    openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin
+    openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace
   } = props
 
   if (activeNav === 'Prospects') {
     return <ProspectsView {...{
       leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory,
       pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead,
-      openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin
+      openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace
     }} />
   }
 
@@ -47,7 +47,7 @@ export default function LeadBoard(props) {
 }
 
 
-function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace }) {
   const demoLeads = filtered.filter(lead => {
     const demoStatus = demoStatusForLead(lead)
     const stage = lead.status || 'Research'
@@ -112,13 +112,14 @@ function DemoWebsitesView({ leads, query, setQuery, status, setStatus, category,
           updateLead={updateLead}
           pipelineStages={pipelineStages}
           startEdit={startEdit}
+          openWorkspace={openWorkspace}
         />)}
       </section>}
     </PageContent>
   </PageLayout>
 }
 
-function DemoWebsiteCard({ lead, demoStatus, openDemoManager, openBuildDemo, openActivities, updateLead, pipelineStages, startEdit }) {
+function DemoWebsiteCard({ lead, demoStatus, openDemoManager, openBuildDemo, openActivities, updateLead, pipelineStages, startEdit, openWorkspace }) {
   const stage = lead.status || 'Research'
   const businessSlug = slugFromBusinessName(lead.business_name)
   const previewGuess = lead.website_url && lead.website_status === 'Website found' ? lead.website_url : ''
@@ -130,7 +131,7 @@ function DemoWebsiteCard({ lead, demoStatus, openDemoManager, openBuildDemo, ope
     { label: 'Live', done: demoStatus === 'Live' || stage === 'Won' }
   ]
 
-  return <Card className="demoWebsiteCard">
+  return <Card className="demoWebsiteCard" interactive onClick={()=>openWorkspace?.(lead)} role="button" tabIndex={0}>
     <div className="demoCardTop">
       <div className="pipelineAvatar">{initials(lead.business_name)}</div>
       <div className="demoCardTitleBlock">
@@ -158,14 +159,14 @@ function DemoWebsiteCard({ lead, demoStatus, openDemoManager, openBuildDemo, ope
 
     {lead.notes ? <div className="demoNotesPreview">{lead.notes}</div> : <div className="demoNotesPreview muted">No demo notes yet. Open Manage Demo to add preview notes, feedback, URLs, and deployment details.</div>}
 
-    <div className="demoCardActions">
+    <div className="demoCardActions" onClick={e=>e.stopPropagation()}>
       <Button variant="secondary" icon={Monitor} onClick={()=>openDemoManager(lead)}>Manage</Button>
       <Button variant="secondary" icon={Rocket} onClick={()=>openBuildDemo(lead)}>Build</Button>
       <Button variant="ghost" icon={MessageSquare} onClick={()=>openActivities(lead)}>Activity</Button>
       <Button variant="ghost" icon={Pencil} onClick={()=>startEdit(lead)}>Edit</Button>
     </div>
 
-    <div className="demoCardFooter">
+    <div className="demoCardFooter" onClick={e=>e.stopPropagation()}>
       <select value={stage} onChange={e=>updateLead(lead.id, { status: e.target.value })}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select>
       {previewGuess ? <a href={previewGuess} target="_blank" rel="noreferrer">Open site <ExternalLink size={12}/></a> : <span>Preview URL not added</span>}
     </div>
@@ -176,7 +177,7 @@ function slugFromBusinessName(value = '') {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'demo-site'
 }
 
-function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, viewMode, setView, setShowAddModal, exportCsv, draggingLeadId, setDraggingLeadId, handleDragStart, handleDrop, pipelineCounts, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, viewMode, setView, setShowAddModal, exportCsv, draggingLeadId, setDraggingLeadId, handleDragStart, handleDrop, pipelineCounts, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace }) {
   const activePipelineCount = filtered.filter(l => !['Won','Lost'].includes(l.status || 'Research')).length
   const readyDemoCount = filtered.filter(l => ['Ready','Demo Ready','Sent','Live'].includes(demoStatusForLead(l))).length
   const proposalCount = filtered.filter(l => (l.status || '') === 'Proposal').length
@@ -224,13 +225,13 @@ function PipelineView({ leads, noWebsite, demos, mrr, query, setQuery, status, s
 
     <PageContent><Card className="pipelineBoardShell">
       {viewMode === 'kanban'
-        ? <KanbanView {...{ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }} />
-        : <TableView {...{ filtered, updateLead, pipelineStages, openActivities, openDemoManager, openBuildDemo, startEdit, deleteLead, isAdmin }} />}
+        ? <KanbanView {...{ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace }} />
+        : <TableView {...{ filtered, updateLead, pipelineStages, openActivities, openDemoManager, openBuildDemo, startEdit, deleteLead, isAdmin, openWorkspace }} />}
     </Card></PageContent>
   </PageLayout>
 }
 
-function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, setStatus, category, setCategory, pipelineStages, setShowAddModal, exportCsv, filtered, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace }) {
   const wonCount = leads.filter(l => l.status === 'Won').length
   const socialOnlyCount = leads.filter(l => ['No website','Likely no/weak site','Social-only'].includes(l.website_status)).length
   const highPriorityCount = leads.filter(l => ['A','A+'].includes(l.priority)).length
@@ -287,18 +288,19 @@ function ProspectsView({ leads, noWebsite, demos, mrr, query, setQuery, status, 
           startEdit={startEdit}
           deleteLead={deleteLead}
           isAdmin={isAdmin}
+          openWorkspace={openWorkspace}
         />)}
       </section>}
     </PageContent>
   </PageLayout>
 }
 
-function ProspectCard({ lead, demoStatus, pipelineStages, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+function ProspectCard({ lead, demoStatus, pipelineStages, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace }) {
   const priorityTone = lead.priority === 'A' || lead.priority === 'A+' ? 'success' : lead.priority === 'C' ? 'warning' : 'neutral'
   const websiteTone = ['No website','Likely no/weak site','Social-only'].includes(lead.website_status) ? 'warning' : lead.website_status === 'Website found' ? 'success' : 'neutral'
   const stage = lead.status || 'Research'
 
-  return <Card className="prospectListCard" interactive>
+  return <Card className="prospectListCard" interactive onClick={()=>openWorkspace?.(lead)} role="button" tabIndex={0}>
     <div className="prospectMain">
       <div className="prospectAvatar">{initials(lead.business_name)}</div>
       <div className="prospectSummary">
@@ -328,7 +330,7 @@ function ProspectCard({ lead, demoStatus, pipelineStages, updateLead, openDemoMa
       <p>{lead.follow_up_note || lead.notes || 'No next step yet. Log a DM, call, or follow-up.'}</p>
     </div>
 
-    <div className="prospectControls">
+    <div className="prospectControls" onClick={e=>e.stopPropagation()}>
       <label>
         Stage
         <select value={stage} onChange={e=>updateLead(lead.id, { status: e.target.value })}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select>
@@ -361,7 +363,7 @@ function instagramUrl(handle = '') {
   return `https://instagram.com/${cleaned}`
 }
 
-function KanbanView({ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin }) {
+function KanbanView({ pipelineStages, draggingLeadId, handleDrop, pipelineCounts, filtered, setDraggingLeadId, handleDragStart, demoStatusForLead, updateLead, openDemoManager, openBuildDemo, openActivities, startEdit, deleteLead, isAdmin, openWorkspace }) {
   const [selectedLead, setSelectedLead] = useState(null)
   const selectedDemoStatus = selectedLead ? demoStatusForLead(selectedLead) : 'Not Started'
 
@@ -388,7 +390,7 @@ function KanbanView({ pipelineStages, draggingLeadId, handleDrop, pipelineCounts
               handleDragStart={handleDragStart}
               demoStatus={demoStatusForLead(l)}
               updateLead={updateLead}
-              onOpenDetails={()=>setSelectedLead(l)}
+              onOpenDetails={()=>openWorkspace ? openWorkspace(l) : setSelectedLead(l)}
             />)}
           </div>
         </section>
