@@ -170,3 +170,159 @@
   border-radius: 12px;
   padding: 0;
 }
+
+/* Sprint 1: Redesigned Prospects page */
+.prospectsPage {
+  display: grid;
+  gap: 18px;
+}
+.prospectStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.prospectsToolbarCard {
+  padding: 14px 16px;
+}
+.prospectsToolbarPrimary {
+  flex: 1 1 720px;
+}
+.prospectsToolbarPrimary .uiSearchInput {
+  flex: 1 1 360px;
+}
+.prospectCardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.prospectCard {
+  display: grid;
+  gap: 14px;
+  min-height: 100%;
+}
+.prospectCardTop {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+.prospectAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0f172a, #334155);
+  color: white;
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+.prospectIdentity { min-width: 0; }
+.prospectIdentity h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.04rem;
+  letter-spacing: -.025em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prospectIdentity p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: .82rem;
+  min-width: 0;
+}
+.prospectBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.prospectQuickInfo {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+.prospectInfoLine {
+  display: grid;
+  grid-template-columns: auto 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: .8rem;
+  text-decoration: none;
+}
+.prospectInfoLine strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-weight: 800;
+}
+.prospectInfoLine:hover strong { text-decoration: underline; }
+.prospectNotes {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: #fff7ed;
+  color: #7c2d12;
+  border: 1px solid #fed7aa;
+  font-size: .85rem;
+  line-height: 1.45;
+}
+.prospectNotes.muted {
+  background: #f8fafc;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.prospectStageControl {
+  display: grid;
+  gap: 6px;
+}
+.prospectStageControl label {
+  color: var(--text-muted);
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.prospectStageControl select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--text);
+  font-weight: 750;
+  padding: 0 10px;
+}
+.prospectActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
+}
+.prospectActions .uiButton {
+  flex: 1 1 auto;
+}
+@media (max-width: 1180px) {
+  .prospectCardGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .prospectStatsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .prospectCardGrid, .prospectStatsGrid { grid-template-columns: 1fr; }
+  .prospectCardTop { grid-template-columns: auto minmax(0, 1fr); }
+  .prospectCardTop .uiBadge { grid-column: 1 / -1; justify-self: start; }
+  .prospectInfoLine { grid-template-columns: auto 64px minmax(0, 1fr) auto; }
+}

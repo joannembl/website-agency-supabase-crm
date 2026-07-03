@@ -473,6 +473,7 @@ function App() {
       />}
 
       {showLeadBoard && <LeadBoard
+        activeNav={activeNav}
         leads={leads}
         noWebsite={noWebsite}
         demos={demos}
