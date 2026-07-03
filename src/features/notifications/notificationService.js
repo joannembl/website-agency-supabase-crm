@@ -45,6 +45,7 @@ export function formatNotificationTime(value) {
 }
 
 export function buildSystemNotifications({ leads = [], tasks = [], teamId, userId }) {
+  if (!teamId) return []
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const generated = []
@@ -125,28 +126,57 @@ export function mergeNotifications(systemNotifications = [], savedNotifications 
 }
 
 export async function fetchNotifications({ teamId, userId, leads = [], tasks = [] }) {
+  if (!teamId) return []
+
   const systemNotifications = buildSystemNotifications({ leads, tasks, teamId, userId })
   if (!supabase) return mergeNotifications(systemNotifications, readLocalNotifications())
+
+  const userFilter = userId
+    ? `user_id.is.null,user_id.eq.${userId}`
+    : 'user_id.is.null'
 
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
     .eq('team_id', teamId)
-    .or(`user_id.is.null,user_id.eq.${userId}`)
+    .or(userFilter)
     .order('created_at', { ascending: false })
     .limit(50)
   if (error) throw error
   return mergeNotifications(systemNotifications, data || [])
 }
 
+function cleanNotificationPayload(payload = {}) {
+  const normalized = {
+    ...payload,
+    is_read: payload.is_read ?? false,
+    created_at: payload.created_at || new Date().toISOString()
+  }
+
+  // UUID columns cannot receive the string/value undefined. Use null for optional UUIDs
+  // and omit id so Supabase/Postgres can generate it.
+  if (!normalized.id) delete normalized.id
+  ;['team_id', 'user_id', 'entity_id'].forEach(key => {
+    if (normalized[key] === undefined || normalized[key] === 'undefined' || normalized[key] === '') {
+      normalized[key] = null
+    }
+  })
+
+  return normalized
+}
+
 export async function createNotification({ payload, currentNotifications = [] }) {
-  const normalized = { ...payload, is_read: payload.is_read ?? false, created_at: payload.created_at || new Date().toISOString() }
+  const normalized = cleanNotificationPayload(payload)
   if (!supabase) {
     const notification = { ...normalized, id: crypto.randomUUID() }
     const next = [notification, ...currentNotifications]
     writeLocalNotifications(next.filter(n => !n.synthetic))
     return { notification, notifications: next }
   }
+  if (!normalized.team_id) {
+    throw new Error('Unable to create notification without a team.')
+  }
+
   const { data, error } = await supabase.from('notifications').insert(normalized).select('*').single()
   if (error) throw error
   return { notification: data, notifications: null }
@@ -178,11 +208,17 @@ export async function markAllNotificationsRead({ teamId, userId, currentNotifica
   for (const n of syntheticToPersist) {
     await createNotification({ payload: { ...n, id: undefined, is_read: true, read_at: new Date().toISOString() }, currentNotifications })
   }
+  if (!teamId) return { notifications: next }
+
+  const userFilter = userId
+    ? `user_id.is.null,user_id.eq.${userId}`
+    : 'user_id.is.null'
+
   const { error } = await supabase
     .from('notifications')
     .update({ is_read: true, read_at: new Date().toISOString() })
     .eq('team_id', teamId)
-    .or(`user_id.is.null,user_id.eq.${userId}`)
+    .or(userFilter)
     .eq('is_read', false)
   if (error) throw error
   return { notifications: next }
