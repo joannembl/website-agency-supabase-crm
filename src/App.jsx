@@ -3,26 +3,18 @@ import { supabase } from './supabase'
 import AuthScreen from './components/AuthScreen'
 import TeamSetup from './components/TeamSetup'
 import { blankDemo, blankLead, pipelineStages } from './constants'
-import useAuthSession from './hooks/useAuthSession'
-import useTeams from './hooks/useTeams'
-import useLeads from './hooks/useLeads'
-import useActivities from './hooks/useActivities'
-import useTasks from './hooks/useTasks'
-import useNotifications from './hooks/useNotifications'
-import * as leadService from './features/leads/leadService'
-import * as demoBuilder from './features/demos/demoBuilder'
-import * as demoService from './features/demos/demoService'
+import { useAuthSession, useTeams, useLeads, useActivities, useTasks, useNotifications } from './hooks'
+import { LeadBoard, leadService } from './features/leads'
+import { demoBuilder, demoService } from './features/demos'
 
 import { AppLayout, Sidebar, Topbar } from './layout'
+import { DEFAULT_NAV } from './config'
 import { Toast, PageSkeleton } from './components/ui'
-import DashboardView from './features/dashboard/DashboardView'
-import PlaceholderModule from './features/modules/PlaceholderModule'
-import LeadBoard from './features/leads/LeadBoard'
-import TasksView from './features/tasks/TasksView'
-import { blankTask } from './features/tasks/TaskFormModal'
-import AppModals from './features/app/AppModals'
+import { DashboardView } from './features/dashboard'
+import { PlaceholderModule } from './features/modules'
+import { TasksView, blankTask, taskService } from './features/tasks'
+import { AppModals } from './features/app'
 import ProspectWorkspace from './features/workspace/ProspectWorkspace'
-import * as taskService from './features/tasks/taskService'
 import './styles.css'
 
 function App() {
@@ -48,7 +40,7 @@ function App() {
   const [editingLead, setEditingLead] = useState(null)
   const [editForm, setEditForm] = useState(blankLead)
   const [viewMode, setViewMode] = useState(localStorage.getItem('crm_view_mode') || 'kanban')
-  const [activeNav, setActiveNav] = useState(localStorage.getItem('crm_active_nav') || 'Dashboard')
+  const [activeNav, setActiveNav] = useState(localStorage.getItem('crm_active_nav') || DEFAULT_NAV)
   const [showAddModal, setShowAddModal] = useState(false)
   const [draggingLeadId, setDraggingLeadId] = useState(null)
   const [demoLead, setDemoLead] = useState(null)

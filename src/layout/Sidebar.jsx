@@ -1,26 +1,13 @@
-import { Home, Users, LayoutDashboard, Monitor, Briefcase, FileText, CheckSquare, DollarSign, BarChart3, Settings } from 'lucide-react'
-
-const navItems = [
-  { name: 'Dashboard', icon: Home },
-  { name: 'Prospects', icon: Users },
-  { name: 'Pipeline', icon: LayoutDashboard },
-  { name: 'Demo Websites', icon: Monitor },
-  { name: 'Clients', icon: Briefcase },
-  { name: 'Proposals', icon: FileText },
-  { name: 'Tasks', icon: CheckSquare },
-  { name: 'Revenue', icon: DollarSign },
-  { name: 'Analytics', icon: BarChart3 },
-  { name: 'Settings', icon: Settings },
-]
+import { NAV_ITEMS, THEME } from '../config'
 
 export default function Sidebar({ activeNav, setNav, connected, activeTeam, userEmail }) {
   return <aside className="sidebar">
     <div className="sidebarBrand">
-      <div className="brandMark">CD</div>
-      <div><strong>Crafted Digital</strong><span>Agency CRM</span></div>
+      <div className="brandMark">{THEME.brandInitials}</div>
+      <div><strong>{THEME.appName}</strong><span>{THEME.productName}</span></div>
     </div>
     <nav className="sideNav">
-      {navItems.map(item => {
+      {NAV_ITEMS.map(item => {
         const Icon = item.icon
         return <button key={item.name} className={activeNav === item.name ? 'active' : ''} onClick={()=>setNav(item.name)}><Icon size={18}/><span>{item.name}</span></button>
       })}

@@ -1797,3 +1797,18 @@
   .workspaceActionGrid,
   .workspaceSidePanel { grid-template-columns: 1fr; }
 }
+
+.fatalErrorShell{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  background:#f8fafc;
+  padding:32px;
+}
+.fatalErrorCard{
+  max-width:520px;
+  width:100%;
+}
+.fatalErrorCard h1{
+  margin:0 0 8px;
+}
