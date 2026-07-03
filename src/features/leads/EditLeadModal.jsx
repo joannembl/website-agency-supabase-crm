@@ -1,5 +1,5 @@
 import { Save, X } from 'lucide-react'
-import { leadCategories, pipelineStages, priorities, websiteStatuses } from '../../constants'
+import { followUpTypes, leadCategories, pipelineStages, priorities, websiteStatuses } from '../../constants'
 
 export default function EditLeadModal({ editingLead, editForm, setEditForm, onClose, saveEdit }) {
   if (!editingLead) return null
@@ -20,6 +20,9 @@ export default function EditLeadModal({ editingLead, editForm, setEditForm, onCl
         <label>Google reviews<input value={editForm.google_reviews || ''} onChange={e=>setEditForm({...editForm,google_reviews:e.target.value})}/></label>
         <label>Priority<select value={editForm.priority || 'B'} onChange={e=>setEditForm({...editForm,priority:e.target.value})}>{priorities.map(x=><option key={x}>{x}</option>)}</select></label>
         <label>Status<select value={editForm.status || 'Research'} onChange={e=>setEditForm({...editForm,status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>Next follow-up date<input type="date" value={editForm.next_follow_up_date || ''} onChange={e=>setEditForm({...editForm,next_follow_up_date:e.target.value})}/></label>
+        <label>Follow-up type<select value={editForm.follow_up_type || 'DM'} onChange={e=>setEditForm({...editForm,follow_up_type:e.target.value})}>{followUpTypes.map(x=><option key={x}>{x}</option>)}</select></label>
+        <label className="fullWidth">Follow-up note<textarea placeholder="What should happen next?" value={editForm.follow_up_note || ''} onChange={e=>setEditForm({...editForm,follow_up_note:e.target.value})}/></label>
         <label className="fullWidth">Notes<textarea value={editForm.notes || ''} onChange={e=>setEditForm({...editForm,notes:e.target.value})}/></label>
       </div>
       <div className="modalActions"><button type="button" className="secondaryBtn" onClick={onClose}>Cancel</button><button type="submit"><Save size={16}/> Save changes</button></div>

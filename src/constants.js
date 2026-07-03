@@ -17,6 +17,8 @@ export const websiteStatuses = ['Needs verification','No website','Likely no/wea
 
 export const priorities = ['A','B','C','D']
 
+export const followUpTypes = ['DM','Call','Email','Meeting','Send Proposal','Review Demo','Other']
+
 export const demoStatuses = ['Not Started','Building','Ready','Sent','Revisions','Approved','Live','Archived']
 
 export const blankDemo = {
@@ -44,5 +46,9 @@ export const blankLead = {
   google_reviews: '',
   priority: 'B',
   status: 'Research',
+  next_follow_up_date: '',
+  follow_up_type: 'DM',
+  follow_up_note: '',
+  last_contacted_at: '',
   notes: ''
 }

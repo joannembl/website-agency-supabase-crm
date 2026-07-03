@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react'
-import { leadCategories, pipelineStages, priorities, websiteStatuses } from '../../constants'
+import { followUpTypes, leadCategories, pipelineStages, priorities, websiteStatuses } from '../../constants'
 
 export default function LeadFormModal({ open, form, setForm, onClose, addLead }) {
   if (!open) return null
@@ -20,6 +20,9 @@ export default function LeadFormModal({ open, form, setForm, onClose, addLead })
         <label>Google reviews<input placeholder="125" value={form.google_reviews} onChange={e=>setForm({...form,google_reviews:e.target.value})}/></label>
         <label>Priority<select value={form.priority} onChange={e=>setForm({...form,priority:e.target.value})}>{priorities.map(x=><option key={x}>{x}</option>)}</select></label>
         <label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>Next follow-up date<input type="date" value={form.next_follow_up_date || ''} onChange={e=>setForm({...form,next_follow_up_date:e.target.value})}/></label>
+        <label>Follow-up type<select value={form.follow_up_type || 'DM'} onChange={e=>setForm({...form,follow_up_type:e.target.value})}>{followUpTypes.map(x=><option key={x}>{x}</option>)}</select></label>
+        <label className="fullWidth">Follow-up note<textarea placeholder="What should happen next?" value={form.follow_up_note || ''} onChange={e=>setForm({...form,follow_up_note:e.target.value})}/></label>
         <label className="fullWidth">Notes<textarea placeholder="Notes" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
       </div>
       <div className="modalActions"><button type="button" className="secondaryBtn" onClick={onClose}>Cancel</button><button type="submit"><Plus size={16}/> Add prospect</button></div>

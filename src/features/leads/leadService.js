@@ -5,7 +5,11 @@ export function normalizeLeadPayload(source) {
     ...source,
     followers: source.followers ? Number(source.followers) : null,
     google_rating: source.google_rating ? Number(source.google_rating) : null,
-    google_reviews: source.google_reviews ? Number(source.google_reviews) : null
+    google_reviews: source.google_reviews ? Number(source.google_reviews) : null,
+    next_follow_up_date: source.next_follow_up_date || null,
+    follow_up_type: source.follow_up_type || null,
+    follow_up_note: source.follow_up_note || null,
+    last_contacted_at: source.last_contacted_at || null
   }
 }
 
@@ -70,4 +74,34 @@ export function leadDemoStatus(lead) {
   if (lead.status === 'Meeting') return 'Revisions'
   if (lead.status === 'Proposal') return 'Approved'
   return 'Not Started'
+}
+
+
+export function getFollowUpStatus(lead) {
+  if (!lead?.next_follow_up_date) return 'none'
+  const today = new Date()
+  today.setHours(0,0,0,0)
+  const due = new Date(`${lead.next_follow_up_date}T00:00:00`)
+  if (Number.isNaN(due.getTime())) return 'none'
+  if (due < today) return 'overdue'
+  if (due.getTime() === today.getTime()) return 'today'
+  return 'upcoming'
+}
+
+export function getFollowUpLabel(lead) {
+  const status = getFollowUpStatus(lead)
+  if (status === 'none') return 'No follow-up set'
+  const date = new Date(`${lead.next_follow_up_date}T00:00:00`)
+  const formatted = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  if (status === 'today') return `Due today · ${lead.follow_up_type || 'Follow-up'}`
+  if (status === 'overdue') return `Overdue · ${formatted}`
+  return `${formatted} · ${lead.follow_up_type || 'Follow-up'}`
+}
+
+export function followUpTone(lead) {
+  const status = getFollowUpStatus(lead)
+  if (status === 'today') return 'warning'
+  if (status === 'overdue') return 'danger'
+  if (status === 'upcoming') return 'info'
+  return 'neutral'
 }

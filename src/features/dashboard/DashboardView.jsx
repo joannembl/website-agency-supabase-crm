@@ -3,6 +3,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock3,
+  CalendarDays,
+  AlertTriangle,
   DollarSign,
   Globe2,
   LayoutDashboard,
@@ -14,6 +16,7 @@ import {
 } from 'lucide-react'
 import { Button, Card, CardHeader, EmptyState, StatCard, Badge } from '../../components/ui'
 import { PageLayout, PageStats, PageContent } from '../../layout'
+import { followUpTone, getFollowUpLabel, getFollowUpStatus } from '../leads/leadService'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -33,8 +36,29 @@ export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineSt
   const noWebsiteLeads = leads.filter(l => ['No website','Likely no/weak site','Social-only candidate'].includes(l.website_status))
   const activePipeline = pipelineStages.filter(stage => !['Won','Lost'].includes(stage))
   const totalActive = activePipeline.reduce((sum, stage) => sum + (pipelineCounts[stage] || 0), 0)
+  const followUpLeads = leads.filter(l => getFollowUpStatus(l) !== 'none')
+  const dueToday = followUpLeads.filter(l => getFollowUpStatus(l) === 'today')
+  const overdue = followUpLeads.filter(l => getFollowUpStatus(l) === 'overdue')
+  const upcoming = followUpLeads.filter(l => getFollowUpStatus(l) === 'upcoming')
+  const sortedFollowUps = [...followUpLeads].sort((a,b)=>String(a.next_follow_up_date || '').localeCompare(String(b.next_follow_up_date || '')))
 
   const focusItems = [
+    ...overdue.slice(0, 2).map(lead => ({
+      icon: AlertTriangle,
+      title: `Follow up ${leadLabel(lead)}`,
+      detail: getFollowUpLabel(lead),
+      action: 'Open pipeline',
+      nav: 'Pipeline',
+      tone: 'danger'
+    })),
+    ...dueToday.slice(0, 2).map(lead => ({
+      icon: CalendarDays,
+      title: `${lead.follow_up_type || 'Follow up'} ${leadLabel(lead)}`,
+      detail: lead.follow_up_note || 'Follow-up due today',
+      action: 'Open pipeline',
+      nav: 'Pipeline',
+      tone: 'warning'
+    })),
     ...noWebsiteLeads.slice(0, 2).map(lead => ({
       icon: Target,
       title: `Qualify ${leadLabel(lead)}`,
@@ -85,6 +109,7 @@ export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineSt
       <StatCard label="Prospects" value={leads.length} icon={Users} helper="Total leads" />
       <StatCard label="Demo Sites" value={demos} icon={Monitor} helper="Built, sent, or active" tone="info" />
       <StatCard label="No / Weak Site" value={noWebsite} icon={Globe2} helper="Best targets" tone="warning" />
+      <StatCard label="Follow-ups" value={dueToday.length + overdue.length} icon={CalendarDays} helper="Due or overdue" tone="warning" />
       <StatCard label="Pipeline Value" value={`$${mrr}`} icon={DollarSign} helper="Projected MRR" tone="success" />
       <StatCard label="Proposal Stage" value={proposalCount} icon={Rocket} helper="Warm opportunities" tone="purple" />
     </PageStats>
@@ -110,6 +135,24 @@ export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineSt
             </button>
           })}
         </div> : <EmptyState icon={CheckCircle2} title="Nothing urgent right now" description="Add prospects or build demos to start filling your daily focus list." />}
+      </Card>
+
+      <Card className="dashboardPanel followUpsPanel">
+        <CardHeader
+          title="Follow-ups"
+          description={`${overdue.length} overdue · ${dueToday.length} due today · ${upcoming.length} upcoming`}
+          action={<Button variant="ghost" size="sm" onClick={()=>setNav('Pipeline')}>Open board <ArrowRight size={15}/></Button>}
+        />
+        {sortedFollowUps.length ? <div className="followUpList">
+          {sortedFollowUps.slice(0, 6).map(lead => <button type="button" key={lead.id} className={`followUpItem followUpItem--${getFollowUpStatus(lead)}`} onClick={()=>setNav('Pipeline')}>
+            <div className="followUpIcon">{getFollowUpStatus(lead) === 'overdue' ? <AlertTriangle size={16}/> : <CalendarDays size={16}/>}</div>
+            <div>
+              <strong>{leadLabel(lead)}</strong>
+              <span>{lead.follow_up_note || getFollowUpLabel(lead)}</span>
+            </div>
+            <Badge tone={followUpTone(lead)}>{getFollowUpLabel(lead)}</Badge>
+          </button>)}
+        </div> : <EmptyState icon={CalendarDays} title="No follow-ups scheduled" description="Add a follow-up date to a prospect to see it here." />}
       </Card>
 
       <Card className="dashboardPanel quickActionsPanel">

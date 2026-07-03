@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ExternalLink, Download, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, Monitor, Rocket, Pencil, Trash2, Plus, Users, Globe2, BadgeDollarSign, Clock3, Camera, Phone, Mail, MapPin, Star, Filter, Sparkles, X, ChevronDown } from 'lucide-react'
+import { ExternalLink, Download, LayoutDashboard, Table2, ChevronRight, ChevronLeft, GripVertical, MessageSquare, Monitor, Rocket, Pencil, Trash2, Plus, Users, Globe2, BadgeDollarSign, Clock3, Camera, Phone, Mail, MapPin, Star, Filter, Sparkles, X, ChevronDown, CheckCircle2 as CheckIcon } from 'lucide-react'
 import { leadCategories, priorities } from '../../constants'
 import Button from '../../components/ui/Button'
 import Badge, { statusTone } from '../../components/ui/Badge'
@@ -12,6 +12,7 @@ import StatCard from '../../components/ui/StatCard'
 import { Toolbar, ToolbarGroup } from '../../components/ui/Toolbar'
 import Modal from '../../components/ui/Modal'
 import { PageLayout, PageStats, PageToolbar, PageContent } from '../../layout'
+import { followUpTone, getFollowUpLabel, getFollowUpStatus } from './leadService'
 
 export default function LeadBoard(props) {
   const {
@@ -309,6 +310,7 @@ function ProspectCard({ lead, demoStatus, pipelineStages, updateLead, openDemoMa
         <div className="prospectBadges cleanBadges">
           <Badge tone={statusTone(stage)} dot>{stage}</Badge>
           <Badge tone={statusTone(demoStatus)} dot>Demo: {demoStatus}</Badge>
+          <Badge tone={followUpTone(lead)} dot>{getFollowUpLabel(lead)}</Badge>
           <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
         </div>
       </div>
@@ -323,7 +325,7 @@ function ProspectCard({ lead, demoStatus, pipelineStages, updateLead, openDemoMa
 
     <div className="prospectNextStep">
       <span>Notes / next step</span>
-      <p>{lead.notes || 'No next step yet. Log a DM, call, or follow-up.'}</p>
+      <p>{lead.follow_up_note || lead.notes || 'No next step yet. Log a DM, call, or follow-up.'}</p>
     </div>
 
     <div className="prospectControls">
@@ -444,6 +446,7 @@ function PipelineCard({ lead, stageIndex, pipelineStages, draggingLeadId, setDra
     <div className="pipelineCardBadges">
       <Badge tone={statusTone(stage)} dot>{stage}</Badge>
       <Badge tone={statusTone(demoStatus)} dot>{demoStatus}</Badge>
+      <Badge tone={followUpTone(lead)} dot>{getFollowUpLabel(lead)}</Badge>
       <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
     </div>
 
@@ -452,7 +455,7 @@ function PipelineCard({ lead, stageIndex, pipelineStages, draggingLeadId, setDra
       {lead.phone ? <span><Phone size={13}/>{lead.phone}</span> : null}
     </div>
 
-    {lead.notes ? <p className="pipelineCardNote">{lead.notes}</p> : <p className="pipelineCardNote muted">Click to view details and next actions.</p>}
+    {(lead.follow_up_note || lead.notes) ? <p className="pipelineCardNote">{lead.follow_up_note || lead.notes}</p> : <p className="pipelineCardNote muted">Click to view details and next actions.</p>}
 
     <div className="jiraCardFooter" onClick={e=>e.stopPropagation()}>
       <button type="button" disabled={stageIndex === 0} onClick={e=>moveStage(e, pipelineStages[stageIndex-1])}><ChevronLeft size={14}/> Back</button>
@@ -491,10 +494,11 @@ function LeadDetailModal({ lead, demoStatus, pipelineStages, updateLead, onClose
         <div className="jiraLeadModalBadges">
           <Badge tone={statusTone(stage)} dot>{stage}</Badge>
           <Badge tone={statusTone(demoStatus)} dot>Demo: {demoStatus}</Badge>
+          <Badge tone={followUpTone(lead)} dot>{getFollowUpLabel(lead)}</Badge>
           <Badge tone={websiteTone} dot>{lead.website_status || 'Needs verification'}</Badge>
           <Badge tone={priorityTone}>Priority {lead.priority || 'B'}</Badge>
         </div>
-        <p>{lead.notes || 'No next step logged yet. Use the sections below to manage this prospect.'}</p>
+        <p>{lead.follow_up_note || lead.notes || 'No next step logged yet. Use the sections below to manage this prospect.'}</p>
       </div>
     </div>
 
@@ -513,6 +517,17 @@ function LeadDetailModal({ lead, demoStatus, pipelineStages, updateLead, onClose
           Stage
           <select value={stage} onChange={e=>updateLead(lead.id, { status: e.target.value })}>{pipelineStages.map(x=><option key={x}>{x}</option>)}</select>
         </label>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Follow-up" icon={Clock3} defaultOpen={getFollowUpStatus(lead) !== 'none'}>
+        <div className="followUpSummaryBox">
+          <Badge tone={followUpTone(lead)} dot>{getFollowUpLabel(lead)}</Badge>
+          <p>{lead.follow_up_note || 'No follow-up note added yet.'}</p>
+        </div>
+        <div className="jiraModalActionRow">
+          <Button variant="secondary" icon={CheckIcon} onClick={()=>updateLead(lead.id, { last_contacted_at: new Date().toISOString(), next_follow_up_date: null, follow_up_note: null })}>Mark complete</Button>
+          <Button variant="ghost" icon={Pencil} onClick={()=>runAndClose(startEdit)}>Edit follow-up</Button>
+        </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Demo website" icon={Monitor}>
