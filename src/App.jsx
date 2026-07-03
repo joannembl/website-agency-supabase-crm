@@ -7,6 +7,7 @@ import useAuthSession from './hooks/useAuthSession'
 import useTeams from './hooks/useTeams'
 import useLeads from './hooks/useLeads'
 import useActivities from './hooks/useActivities'
+import useTasks from './hooks/useTasks'
 import * as leadService from './features/leads/leadService'
 import * as demoBuilder from './features/demos/demoBuilder'
 import * as demoService from './features/demos/demoService'
@@ -21,6 +22,9 @@ import TeamModal from './features/team/TeamModal'
 import ActivityModal from './features/activities/ActivityModal'
 import BuildDemoModal from './features/demos/BuildDemoModal'
 import DemoManagerModal from './features/demos/DemoManagerModal'
+import TasksView from './features/tasks/TasksView'
+import TaskFormModal, { blankTask } from './features/tasks/TaskFormModal'
+import * as taskService from './features/tasks/taskService'
 import './styles.css'
 
 function App() {
@@ -32,6 +36,7 @@ function App() {
     changeMemberRole, removeMember
   } = useTeams(session, setMessage)
   const { leads, setLeads, loadLeads, addLead: createLeadRecord, updateLead, deleteLead: removeLeadRecord } = useLeads({ session, activeTeamId, setMessage })
+  const { tasks, setTasks, loadTasks, addTask: createTaskRecord, updateTask, deleteTask: removeTaskRecord, completeTask, reopenTask } = useTasks({ session, activeTeamId, setMessage })
   const {
     activityLead, setActivityLead, activities, activityForm, setActivityForm,
     openActivities, addActivity, deleteActivity, formatActivityDate
@@ -59,6 +64,12 @@ function App() {
   const [generatedSiteHtml, setGeneratedSiteHtml] = useState('')
   const [buildSaving, setBuildSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [taskForm, setTaskForm] = useState(blankTask)
+  const [taskQuery, setTaskQuery] = useState('')
+  const [taskStatusFilter, setTaskStatusFilter] = useState('All')
+  const [taskPriorityFilter, setTaskPriorityFilter] = useState('All')
+  const [taskSaving, setTaskSaving] = useState(false)
 
   const connected = Boolean(supabase)
   const normalizeDemoForm = demoBuilder.normalizeDemoForm
@@ -171,6 +182,29 @@ function App() {
     }
   }
 
+
+  async function addTask(e) {
+    e.preventDefault()
+    if (!taskForm.title.trim() || taskSaving) return
+    setTaskSaving(true)
+    setMessage('')
+    const payload = {
+      ...taskService.normalizeTaskPayload(taskForm),
+      team_id: activeTeamId || null,
+      created_by: session?.user?.id || null,
+      assigned_to: taskForm.assigned_to || session?.user?.id || null
+    }
+    try {
+      await createTaskRecord(payload)
+      setTaskForm(blankTask)
+      setShowTaskModal(false)
+      showToast('Task created')
+    } catch (error) {
+      setMessage(error.message || 'Unable to create task.')
+    } finally {
+      setTaskSaving(false)
+    }
+  }
 
   async function addLead(e) {
     e.preventDefault(); setMessage('')
@@ -403,7 +437,7 @@ function App() {
   }
 
   async function signOut() {
-    await authSignOut(); setTeams([]); setActiveTeamId(''); setLeads([])
+    await authSignOut(); setTeams([]); setActiveTeamId(''); setLeads([]); setTasks([])
   }
 
   const filtered = useMemo(() => leads.filter(l => {
@@ -455,6 +489,7 @@ function App() {
         mrr={mrr}
         pipelineStages={pipelineStages}
         pipelineCounts={pipelineCounts}
+        tasks={tasks}
         setNav={setNav}
       />}
 
@@ -491,9 +526,27 @@ function App() {
         isAdmin={isAdmin}
       />}
 
-      {!showLeadBoard && activeNav !== 'Dashboard' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
+      {activeNav === 'Tasks' && <TasksView
+        tasks={tasks}
+        leads={leads}
+        query={taskQuery}
+        setQuery={setTaskQuery}
+        statusFilter={taskStatusFilter}
+        setStatusFilter={setTaskStatusFilter}
+        priorityFilter={taskPriorityFilter}
+        setPriorityFilter={setTaskPriorityFilter}
+        setShowTaskModal={setShowTaskModal}
+        completeTask={completeTask}
+        reopenTask={reopenTask}
+        deleteTask={removeTaskRecord}
+        setNav={setNav}
+      />}
+
+      {!showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
 
     <LeadFormModal open={showAddModal} form={form} setForm={setForm} onClose={()=>setShowAddModal(false)} addLead={addLead} />
+
+    <TaskFormModal open={showTaskModal} taskForm={taskForm} setTaskForm={setTaskForm} leads={leads} onClose={()=>setShowTaskModal(false)} onSubmit={addTask} saving={taskSaving} />
 
     <TeamModal
       open={showTeamModal}

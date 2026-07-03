@@ -2,6 +2,7 @@ import {
   Activity,
   ArrowRight,
   CheckCircle2,
+  Circle,
   Clock3,
   CalendarDays,
   AlertTriangle,
@@ -17,6 +18,7 @@ import {
 import { Button, Card, CardHeader, EmptyState, StatCard, Badge } from '../../components/ui'
 import { PageLayout, PageStats, PageContent } from '../../layout'
 import { followUpTone, getFollowUpLabel, getFollowUpStatus } from '../leads/leadService'
+import { getTaskDueStatus, taskDueLabel, taskTone } from '../tasks/taskService'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -29,7 +31,7 @@ function leadLabel(lead) {
   return lead?.business_name || lead?.instagram_handle || 'Untitled prospect'
 }
 
-export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineStages, pipelineCounts, setNav }) {
+export default function DashboardView({ leads, tasks = [], noWebsite, demos, mrr, pipelineStages, pipelineCounts, setNav }) {
   const won = leads.filter(l => l.status === 'Won').length
   const proposalCount = leads.filter(l => ['Proposal', 'Meeting'].includes(l.status)).length
   const demoLeads = leads.filter(l => ['Demo Built','DM Sent','Follow-up','Meeting','Proposal'].includes(l.status))
@@ -41,6 +43,11 @@ export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineSt
   const overdue = followUpLeads.filter(l => getFollowUpStatus(l) === 'overdue')
   const upcoming = followUpLeads.filter(l => getFollowUpStatus(l) === 'upcoming')
   const sortedFollowUps = [...followUpLeads].sort((a,b)=>String(a.next_follow_up_date || '').localeCompare(String(b.next_follow_up_date || '')))
+  const openTasks = tasks.filter(task => task.status !== 'completed')
+  const taskDueToday = openTasks.filter(task => getTaskDueStatus(task) === 'today')
+  const taskOverdue = openTasks.filter(task => getTaskDueStatus(task) === 'overdue')
+  const taskUpcoming = openTasks.filter(task => getTaskDueStatus(task) === 'upcoming')
+  const sortedTasks = [...openTasks].sort((a,b)=>String(a.due_date || '9999-12-31').localeCompare(String(b.due_date || '9999-12-31')))
 
   const focusItems = [
     ...overdue.slice(0, 2).map(lead => ({
@@ -57,6 +64,22 @@ export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineSt
       detail: lead.follow_up_note || 'Follow-up due today',
       action: 'Open pipeline',
       nav: 'Pipeline',
+      tone: 'warning'
+    })),
+    ...taskOverdue.slice(0, 2).map(task => ({
+      icon: Circle,
+      title: task.title,
+      detail: taskDueLabel(task),
+      action: 'Open tasks',
+      nav: 'Tasks',
+      tone: 'danger'
+    })),
+    ...taskDueToday.slice(0, 2).map(task => ({
+      icon: Circle,
+      title: task.title,
+      detail: task.description || taskDueLabel(task),
+      action: 'Open tasks',
+      nav: 'Tasks',
       tone: 'warning'
     })),
     ...noWebsiteLeads.slice(0, 2).map(lead => ({
@@ -110,8 +133,8 @@ export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineSt
       <StatCard label="Demo Sites" value={demos} icon={Monitor} helper="Built, sent, or active" tone="info" />
       <StatCard label="No / Weak Site" value={noWebsite} icon={Globe2} helper="Best targets" tone="warning" />
       <StatCard label="Follow-ups" value={dueToday.length + overdue.length} icon={CalendarDays} helper="Due or overdue" tone="warning" />
+      <StatCard label="Open Tasks" value={openTasks.length} icon={Circle} helper="Team workload" tone="info" />
       <StatCard label="Pipeline Value" value={`$${mrr}`} icon={DollarSign} helper="Projected MRR" tone="success" />
-      <StatCard label="Proposal Stage" value={proposalCount} icon={Rocket} helper="Warm opportunities" tone="purple" />
     </PageStats>
 
     <PageContent className="commandDashboardGrid">
@@ -155,13 +178,31 @@ export default function DashboardView({ leads, noWebsite, demos, mrr, pipelineSt
         </div> : <EmptyState icon={CalendarDays} title="No follow-ups scheduled" description="Add a follow-up date to a prospect to see it here." />}
       </Card>
 
+      <Card className="dashboardPanel tasksSummaryPanel">
+        <CardHeader
+          title="Tasks"
+          description={`${taskOverdue.length} overdue · ${taskDueToday.length} due today · ${taskUpcoming.length} upcoming`}
+          action={<Button variant="ghost" size="sm" onClick={()=>setNav('Tasks')}>Open tasks <ArrowRight size={15}/></Button>}
+        />
+        {sortedTasks.length ? <div className="taskDashboardList">
+          {sortedTasks.slice(0, 5).map(task => <button type="button" key={task.id} className={`taskDashboardItem taskDashboardItem--${getTaskDueStatus(task)}`} onClick={()=>setNav('Tasks')}>
+            <div className="taskDashboardIcon"><Circle size={16}/></div>
+            <div>
+              <strong>{task.title}</strong>
+              <span>{task.description || taskDueLabel(task)}</span>
+            </div>
+            <Badge tone={taskTone(task)}>{taskDueLabel(task)}</Badge>
+          </button>)}
+        </div> : <EmptyState icon={Circle} title="No open tasks" description="Create tasks for follow-ups, demos, proposals, and client work." />}
+      </Card>
+
       <Card className="dashboardPanel quickActionsPanel">
         <CardHeader title="Quick Actions" description="Jump into the work fast." />
         <div className="quickActionGrid">
           <button type="button" onClick={()=>setNav('Prospects')}><Plus size={17}/><span>Add prospect</span></button>
           <button type="button" onClick={()=>setNav('Demo Websites')}><Monitor size={17}/><span>Build demo</span></button>
           <button type="button" onClick={()=>setNav('Pipeline')}><LayoutDashboard size={17}/><span>Open pipeline</span></button>
-          <button type="button" onClick={()=>setNav('Proposals')}><DollarSign size={17}/><span>Proposal</span></button>
+          <button type="button" onClick={()=>setNav('Tasks')}><Circle size={17}/><span>Tasks</span></button>
         </div>
       </Card>
 
