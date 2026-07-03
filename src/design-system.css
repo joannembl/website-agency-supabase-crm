@@ -817,3 +817,72 @@
   .pipelineViewToggle, .pipelineViewToggle button { width: 100%; }
   .pipelineViewToggle button { flex: 1; }
 }
+
+/* Pipeline overflow fix: keep the board inside the workspace */
+.pipelinePage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+}
+.pipelinePage > * {
+  min-width: 0;
+}
+.pipelineToolbarCard,
+.pipelineBoardShell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.pipelineBoardShell {
+  overflow: hidden;
+}
+.pipelineKanbanBoard {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  grid-template-columns: repeat(8, minmax(280px, 300px));
+  align-items: start;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.pipelineColumn {
+  width: 100%;
+  min-width: 0;
+  max-width: 300px;
+}
+.pipelineLeadCard {
+  min-width: 0;
+  max-width: 100%;
+}
+.pipelineCardDetails,
+.pipelineCardNote,
+.pipelineCardIdentity,
+.pipelineCardIdentity > div {
+  min-width: 0;
+}
+.pipelineCardTop {
+  min-width: 0;
+}
+.pipelineCardActions {
+  min-width: 0;
+  overflow: hidden;
+}
+.pipelineQuickActions {
+  min-width: 0;
+}
+.pipelineToolbarPrimary {
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .pipelineKanbanBoard {
+    grid-template-columns: repeat(8, 280px);
+  }
+  .pipelineColumn {
+    max-width: 280px;
+  }
+}
