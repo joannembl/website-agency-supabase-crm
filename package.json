@@ -2,7 +2,12 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "bootstrap:github": "node scripts/bootstrap-github.mjs",
+    "bootstrap:github:dry-run": "node scripts/bootstrap-github.mjs --dry-run --skip-missing-labels",
+    "bootstrap:labels": "node scripts/create-labels.mjs",
+    "bootstrap:milestones": "node scripts/create-milestones.mjs",
+    "bootstrap:issues": "node scripts/import-issues.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",

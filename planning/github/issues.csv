@@ -1,0 +1,865 @@
+Title,Body,Epic,Sprint,Priority,Labels,Component,Target Release,Story Points,Dependency,Status
+Audit Dashboard responsive behavior,"Perform a targeted quality audit for audit dashboard responsive behavior.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Audit Prospects empty states,"Perform a targeted quality audit for audit prospects empty states.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Audit Pipeline drag/drop UX,"Perform a targeted quality audit for audit pipeline drag/drop ux.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Audit Demo Websites page consistency,"Perform a targeted quality audit for audit demo websites page consistency.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Audit notification drawer UX,"Perform a targeted quality audit for audit notification drawer ux.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Audit command palette keyboard support,"Perform a targeted quality audit for audit command palette keyboard support.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Audit Entity Workspace mobile behavior,"Perform a targeted quality audit for audit entity workspace mobile behavior.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Audit Supabase RLS policies before beta,"Perform a targeted quality audit for audit supabase rls policies before beta.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Sprint 3,P2,"tech-debt,mvp",frontend,v0.9 Beta,2,,Backlog
+Proposal tab scaffold,"Implement proposal tab scaffold for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Pricing package selector,"Implement pricing package selector for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Add-on selector,"Implement add-on selector for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal line item editor,"Implement proposal line item editor for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal preview panel,"Implement proposal preview panel for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal save to database,"Implement proposal save to database for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal status workflow,"Implement proposal status workflow for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal PDF export,"Implement proposal pdf export for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal email/share link placeholder,"Implement proposal email/share link placeholder for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal activity logging,"Implement proposal activity logging for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal expiration date,"Implement proposal expiration date for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Proposal acceptance status,"Implement proposal acceptance status for the Proposal Builder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Create proposals table migration,"Implement backend support for create proposals table migration.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Create proposal RLS policies,"Implement backend support for create proposal rls policies.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Create proposalService,"Implement backend support for create proposalservice.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Create useProposals hook,"Implement backend support for create useproposals hook.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Client conversion action,"Implement client conversion action.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client conversion confirmation drawer,"Implement client conversion confirmation drawer.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Create client record from prospect,"Implement create client record from prospect.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Copy demo and proposal data to client,"Implement copy demo and proposal data to client.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client conversion activity log,"Implement client conversion activity log.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client conversion notification,"Implement client conversion notification.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Sales Workspace,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Create clients table migration,"Implement backend support for create clients table migration.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Create client RLS policies,"Implement backend support for create client rls policies.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Create clientService,"Implement backend support for create clientservice.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Create useClients hook,"Implement backend support for create useclients hook.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"database,backend,mvp",database,v0.9 Beta,3,,Backlog
+Client Workspace scaffold,"Implement client workspace scaffold using Entity Workspace.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client Workspace overview tab,"Implement client workspace overview tab using Entity Workspace.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client Workspace website tab,"Implement client workspace website tab using Entity Workspace.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client Workspace invoices placeholder,"Implement client workspace invoices placeholder using Entity Workspace.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client Workspace activity tab,"Implement client workspace activity tab using Entity Workspace.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Client Workspace tasks tab,"Implement client workspace tasks tab using Entity Workspace.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Management,Sprint 3,P1,"feature,frontend,mvp",frontend,v0.9 Beta,3,,Backlog
+Website Inventory page,"Implement website inventory page for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Website record detail workspace,"Implement website record detail workspace for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Domain tracking fields,"Implement domain tracking fields for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Hosting tracking fields,"Implement hosting tracking fields for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+GitHub repo tracking,"Implement github repo tracking for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Netlify/Cloudflare tracking,"Implement netlify/cloudflare tracking for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+SSL status field,"Implement ssl status field for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Analytics link tracking,"Implement analytics link tracking for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Renewal date reminders,"Implement renewal date reminders for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Website inventory filters,"Implement website inventory filters for agency operations.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Create websites table migration,"Implement Create websites table migration.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+Website RLS policies,"Implement Website RLS policies.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+websiteService,"Implement websiteService.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+useWebsites hook,"Implement useWebsites hook.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Website Inventory,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+Revenue Dashboard page,"Implement revenue dashboard page.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+MRR calculation,"Implement mrr calculation.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+ARR calculation,"Implement arr calculation.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Setup revenue tracking,"Implement setup revenue tracking.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Revenue goal widget,"Implement revenue goal widget.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Close rate calculation,"Implement close rate calculation.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Client value summary,"Implement client value summary.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Revenue trend chart placeholder,"Implement revenue trend chart placeholder.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Revenue filters by date,"Implement revenue filters by date.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"feature,mvp",frontend,v1.0 MVP,3,,Backlog
+Create revenue_records table,"Implement Create revenue_records table.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+Revenue RLS policies,"Implement Revenue RLS policies.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+revenueService,"Implement revenueService.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+useRevenue hook,"Implement useRevenue hook.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Revenue,Sprint 4,P1,"database,backend,mvp",database,v1.0 MVP,3,,Backlog
+Build Demo V3 architecture spike,"Implement or plan build demo v3 architecture spike for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+GitHub OAuth/token setup plan,"Implement or plan github oauth/token setup plan for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Create repo from template,"Implement or plan create repo from template for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Commit generated demo files,"Implement or plan commit generated demo files for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Netlify deploy integration,"Implement or plan netlify deploy integration for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Cloudflare Pages deployment research,"Implement or plan cloudflare pages deployment research for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Save preview URL automatically,"Implement or plan save preview url automatically for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Update demo status after deployment,"Implement or plan update demo status after deployment for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Create deployment activity log,"Implement or plan create deployment activity log for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Create deployment notification,"Implement or plan create deployment notification for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Deployment error handling,"Implement or plan deployment error handling for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Deployment retry flow,"Implement or plan deployment retry flow for Build Demo V3.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Automation,Sprint 5,P1,"automation,feature",frontend,v1.5 Automation,5,,Backlog
+Settings page restructure,"Implement settings page restructure or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Team settings polish,"Implement team settings polish or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Role management audit,"Implement role management audit or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Branding settings,"Implement branding settings or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Notification preferences,"Implement notification preferences or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Template settings,"Implement template settings or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Integration settings scaffold,"Implement integration settings scaffold or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+API key storage approach,"Implement api key storage approach or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Stripe integration planning,"Implement stripe integration planning or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+OpenAI integration planning,"Implement openai integration planning or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Netlify integration settings,"Implement netlify integration settings or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+GitHub integration settings,"Implement github integration settings or supporting design.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Settings,Sprint 4,P2,"feature,enhancement",frontend,v1.0 MVP,3,,Backlog
+Client portal architecture PRD,"Plan or implement client portal architecture prd.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Client login model,"Plan or implement client login model.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Client edit request flow,"Plan or implement client edit request flow.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Client file upload flow,"Plan or implement client file upload flow.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Client approval workflow,"Plan or implement client approval workflow.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Client analytics page,"Plan or implement client analytics page.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Client invoice view,"Plan or implement client invoice view.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Client portal permissions,"Plan or implement client portal permissions.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Client Portal,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Sales funnel analytics,"Implement sales funnel analytics.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Analytics,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Demo conversion analytics,"Implement demo conversion analytics.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Analytics,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Proposal conversion analytics,"Implement proposal conversion analytics.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Analytics,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Task completion analytics,"Implement task completion analytics.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Analytics,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Team activity analytics,"Implement team activity analytics.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Analytics,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+MRR trend analytics,"Implement mrr trend analytics.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Analytics,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+Dashboard widget customization,"Implement dashboard widget customization.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Analytics,Future,P2,feature,frontend,v2.0 AI,5,,Backlog
+AI Assistant PRD,"Plan or implement ai assistant prd.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+Natural language query spike,"Plan or implement natural language query spike.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+AI follow-up suggestions,"Plan or implement ai follow-up suggestions.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+AI proposal draft generation,"Plan or implement ai proposal draft generation.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+AI prospect summary,"Plan or implement ai prospect summary.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+AI daily recap,"Plan or implement ai daily recap.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+AI command palette actions,"Plan or implement ai command palette actions.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+AI demo copy generation improvements,"Plan or implement ai demo copy generation improvements.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",AI Assistant,Future,P2,"feature,automation",frontend,v2.0 AI,5,,Backlog
+Migrate shared components to TypeScript,"Address technical debt item: Migrate shared components to TypeScript.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Migrate services to TypeScript,"Address technical debt item: Migrate services to TypeScript.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Migrate hooks to TypeScript,"Address technical debt item: Migrate hooks to TypeScript.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add Supabase generated types,"Address technical debt item: Add Supabase generated types.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add Vitest setup,"Address technical debt item: Add Vitest setup.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add component tests for UI primitives,"Address technical debt item: Add component tests for UI primitives.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add service tests,"Address technical debt item: Add service tests.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add Playwright smoke tests,"Address technical debt item: Add Playwright smoke tests.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add accessibility audit workflow,"Address technical debt item: Add accessibility audit workflow.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add lint workflow,"Address technical debt item: Add lint workflow.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add formatter workflow,"Address technical debt item: Add formatter workflow.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Add import path aliases,"Address technical debt item: Add import path aliases.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Normalize API return shapes,"Address technical debt item: Normalize API return shapes.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Centralize date helpers,"Address technical debt item: Centralize date helpers.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Centralize currency helpers,"Address technical debt item: Centralize currency helpers.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Centralize toast usage,"Address technical debt item: Centralize toast usage.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Create modal manager RFC,"Address technical debt item: Create modal manager RFC.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Audit hardcoded strings,"Address technical debt item: Audit hardcoded strings.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Audit hardcoded colors,"Address technical debt item: Audit hardcoded colors.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Audit icon usage,"Address technical debt item: Audit icon usage.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Technical Debt,Backlog,P2,tech-debt,frontend,v1.0 MVP,3,,Backlog
+Update root README for MVP,"Document update root readme for mvp.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Write local development guide,"Document write local development guide.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Write deployment guide,"Document write deployment guide.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Write Supabase setup guide,"Document write supabase setup guide.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Write RLS guide,"Document write rls guide.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Write contribution guide,"Document write contribution guide.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Create changelog process,"Document create changelog process.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Create release checklist,"Document create release checklist.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Document environment variables,"Document document environment variables.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog
+Document GitHub Pages deployment,"Document document github pages deployment.
+
+Acceptance Criteria:
+- [ ] Build passes
+- [ ] Uses shared design system
+- [ ] Handles loading and empty states",Documentation,Backlog,P2,documentation,frontend,v1.0 MVP,2,,Backlog

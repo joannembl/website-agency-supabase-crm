@@ -1,0 +1,16 @@
+name,color,description
+feature,0E8A16,New product feature
+bug,D73A4A,Something is broken
+enhancement,A2EEEF,Improvement to existing functionality
+tech-debt,FBCA04,Code cleanup or architecture work
+documentation,0075CA,Docs work
+frontend,1D76DB,Frontend work
+backend,5319E7,Backend or service work
+database,5319E7,Database or migration work
+security,B60205,Security or RLS work
+automation,C5DEF5,Automation feature
+design,D4C5F9,UI/UX design
+priority-high,B60205,High priority
+priority-medium,FBCA04,Medium priority
+priority-low,C2E0C6,Low priority
+mvp,0052CC,Required for MVP
