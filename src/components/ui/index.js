@@ -15,3 +15,5 @@ export { FormField, FormGrid, FormActions } from './FormField'
 export { Skeleton, PageSkeleton } from './Skeleton'
 export { default as Toast } from './Toast'
 export { Section } from './Section'
+
+export { default as HelpCallout } from './HelpCallout.jsx'

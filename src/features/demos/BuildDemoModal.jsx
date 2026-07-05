@@ -1,43 +1,105 @@
-import { Download, Monitor, Rocket, Save, X } from 'lucide-react'
-import { leadCategories } from '../../constants'
+import { useState } from 'react'
+import { Sparkles, Wand2, Download, Save, X } from 'lucide-react'
+import { Button, Modal, FormField, FormGrid, HelpCallout } from '../../components/ui'
+import { generateDemoSiteWithAI, aiDemoProviderNote } from './aiDemoService'
 
-const styleOptions = ['Modern / clean','Luxury / premium','Bold performance','Minimal black & white','Friendly local business','Instagram portfolio style']
+function fieldValue(buildForm = {}, key, fallback = '') {
+  return buildForm?.[key] ?? fallback
+}
 
-export default function BuildDemoModal(props) {
-  const { buildLead, buildForm, setBuildForm, buildBrief, setBuildBrief, generatedSiteCopy, generatedSiteHtml, buildSaving, generateDemoBrief, generateTemplateSite, downloadGeneratedHtml, saveBuildDemo, slugify, onClose } = props
+export default function BuildDemoModal({
+  buildLead,
+  buildForm = {},
+  setBuildForm,
+  buildBrief,
+  setBuildBrief,
+  generatedSiteCopy,
+  generatedSiteHtml,
+  setGeneratedSiteCopy,
+  setGeneratedSiteHtml,
+  buildSaving,
+  generateDemoBrief,
+  generateTemplateSite,
+  downloadGeneratedHtml,
+  saveBuildDemo,
+  onClose
+}) {
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiError, setAiError] = useState('')
+
   if (!buildLead) return null
 
-  return <div className="modalBackdrop" onMouseDown={e=>{ if (e.target.className === 'modalBackdrop') onClose() }}>
-    <form className="editModal buildDemoModal" onSubmit={saveBuildDemo}>
-      <div className="modalHeader">
-        <div><span className="eyebrow">V2 template generator</span><h2>Build Demo Website</h2><p>{buildLead.business_name}</p></div>
-        <button type="button" className="iconBtn" onClick={onClose}><X size={18}/></button>
-      </div>
-      <div className="buildDemoGrid">
-        <section className="buildDemoForm">
-          <h3>Demo inputs</h3>
-          <p>Choose a niche template, generate the page copy, and download a starter index.html for the demo site.</p>
-          <label>Template<select value={buildForm.template} onChange={e=>setBuildForm({...buildForm, template:e.target.value})}>{leadCategories.map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>Style direction<select value={buildForm.style} onChange={e=>setBuildForm({...buildForm, style:e.target.value})}>{styleOptions.map(x=><option key={x}>{x}</option>)}</select></label>
-          <label>Services / packages to feature<textarea placeholder="Example: Full detail, ceramic coating, paint correction, maintenance wash..." value={buildForm.services} onChange={e=>setBuildForm({...buildForm, services:e.target.value})}></textarea></label>
-          <label>Photo / content notes<textarea placeholder="Example: Use IG photos later, placeholder hero for now, include before/after gallery..." value={buildForm.photos} onChange={e=>setBuildForm({...buildForm, photos:e.target.value})}></textarea></label>
-          <label>Extra build notes<textarea placeholder="Anything specific you want included in this demo?" value={buildForm.notes} onChange={e=>setBuildForm({...buildForm, notes:e.target.value})}></textarea></label>
-          <div className="modalActions inlineActions">
-            <button type="button" className="secondaryBtn" onClick={()=>setBuildBrief(generateDemoBrief())}><Rocket size={16}/> Generate brief</button>
-            <button type="button" className="secondaryBtn" onClick={generateTemplateSite}><Monitor size={16}/> Generate site</button>
-            <button type="button" className="secondaryBtn" onClick={downloadGeneratedHtml} disabled={!buildLead}><Download size={16}/> Download index.html</button>
-            <button type="submit" disabled={buildSaving}><Save size={16}/> {buildSaving ? 'Saving...' : 'Save as Building'}</button>
-          </div>
+  function updateField(key, value) {
+    setBuildForm?.({ ...buildForm, [key]: value })
+  }
+
+  async function generateWithAI() {
+    setAiGenerating(true)
+    setAiError('')
+    try {
+      const result = await generateDemoSiteWithAI({ lead: buildLead, buildForm, buildBrief })
+      setBuildBrief?.(result.briefMarkdown || '')
+      setGeneratedSiteCopy?.(result.siteCopy || null)
+      setGeneratedSiteHtml?.(result.html || '')
+    } catch (error) {
+      setAiError(error.message || 'Unable to generate demo with AI.')
+    } finally {
+      setAiGenerating(false)
+    }
+  }
+
+  return <Modal
+    open={Boolean(buildLead)}
+    title="Build Demo Website"
+    description={`Generate demo content and a static website for ${buildLead.business_name || 'this prospect'}.`}
+    onClose={onClose}
+    size="xl"
+    footer={<>
+      <Button variant="secondary" icon={X} onClick={onClose}>Close</Button>
+      <Button variant="secondary" icon={Wand2} onClick={generateDemoBrief}>Generate Brief</Button>
+      <Button variant="secondary" icon={Sparkles} onClick={generateWithAI} disabled={aiGenerating}>{aiGenerating ? 'Generating...' : 'Generate Demo with AI'}</Button>
+      <Button variant="secondary" icon={Download} onClick={downloadGeneratedHtml} disabled={!generatedSiteHtml}>Download HTML</Button>
+      <Button icon={Save} onClick={saveBuildDemo} disabled={buildSaving}>{buildSaving ? 'Saving...' : 'Save Demo'}</Button>
+    </>}
+  >
+    <div className="demoBuilderAiShell">
+      <HelpCallout
+        title="AI demo generator"
+        description="Fill in the business details below, then generate a full demo website with editable copy and HTML."
+      />
+      <p className="demoBuilderProviderNote">{aiDemoProviderNote()}</p>
+      {aiError ? <div className="notice errorNotice">{aiError}</div> : null}
+
+      <FormGrid>
+        <FormField label="Business name"><input value={fieldValue(buildForm, 'business_name', buildLead.business_name || '')} onChange={e => updateField('business_name', e.target.value)} /></FormField>
+        <FormField label="Category"><input value={fieldValue(buildForm, 'category', buildLead.category || '')} onChange={e => updateField('category', e.target.value)} placeholder="Mobile detailing, tint shop, repair shop..." /></FormField>
+        <FormField label="City / service area"><input value={fieldValue(buildForm, 'city', buildLead.city || '')} onChange={e => updateField('city', e.target.value)} /></FormField>
+        <FormField label="Primary CTA"><input value={fieldValue(buildForm, 'cta', fieldValue(buildForm, 'primary_cta', 'Request a Quote'))} onChange={e => updateField('cta', e.target.value)} /></FormField>
+        <FormField label="Phone"><input value={fieldValue(buildForm, 'phone', buildLead.phone || '')} onChange={e => updateField('phone', e.target.value)} /></FormField>
+        <FormField label="Email"><input value={fieldValue(buildForm, 'email', buildLead.email || '')} onChange={e => updateField('email', e.target.value)} /></FormField>
+        <FormField label="Instagram"><input value={fieldValue(buildForm, 'instagram_handle', buildLead.instagram_handle || '')} onChange={e => updateField('instagram_handle', e.target.value)} /></FormField>
+        <FormField label="Business hours"><input value={fieldValue(buildForm, 'business_hours', '')} onChange={e => updateField('business_hours', e.target.value)} placeholder="Mon–Fri 9–5" /></FormField>
+        <FormField label="Primary color"><input value={fieldValue(buildForm, 'primary_color', '#111827')} onChange={e => updateField('primary_color', e.target.value)} /></FormField>
+        <FormField label="Accent color"><input value={fieldValue(buildForm, 'accent_color', '#2563eb')} onChange={e => updateField('accent_color', e.target.value)} /></FormField>
+        <FormField className="fullWidth" label="Services" hint="One per line or comma-separated"><textarea value={fieldValue(buildForm, 'services', '')} onChange={e => updateField('services', e.target.value)} placeholder="Exterior detail, ceramic coating, paint correction" /></FormField>
+        <FormField className="fullWidth" label="Style / notes"><textarea value={fieldValue(buildForm, 'notes', buildLead.notes || '')} onChange={e => updateField('notes', e.target.value)} placeholder="Modern, premium, family-owned, fast turnaround, use dark colors..." /></FormField>
+      </FormGrid>
+
+      <div className="demoBuilderPreviewGrid">
+        <section className="demoBuilderPreviewCard">
+          <h3>Generated Brief</h3>
+          <pre>{buildBrief || 'Generate a brief or AI demo to preview the strategy here.'}</pre>
         </section>
-        <aside className="buildDemoPreview">
-          <h3>Generated output</h3>
-          <p>The brief and generated copy save to Demo Manager. Download exports the static starter file.</p>
-          <div className="builderTabs"><button type="button" className="active">Brief</button><button type="button" onClick={generateTemplateSite}>Refresh generated site</button></div>
-          <textarea value={buildBrief || generateDemoBrief()} onChange={e=>setBuildBrief(e.target.value)}></textarea>
-          {generatedSiteCopy && <div className="generatedCopy"><h4>Homepage copy generated</h4><pre>{generatedSiteCopy}</pre></div>}
-          {generatedSiteHtml && <div className="generatedHtmlBox"><h4>Starter index.html ready</h4><p>{slugify(buildLead?.business_name)}-index.html</p><button type="button" className="secondaryBtn" onClick={downloadGeneratedHtml}><Download size={16}/> Download HTML</button></div>}
-        </aside>
+        <section className="demoBuilderPreviewCard">
+          <h3>Generated Site Copy</h3>
+          <pre>{generatedSiteCopy ? JSON.stringify(generatedSiteCopy, null, 2) : 'Generated copy will appear here.'}</pre>
+        </section>
       </div>
-    </form>
-  </div>
+
+      <section className="demoBuilderPreviewCard fullWidth">
+        <h3>Generated HTML</h3>
+        <pre>{generatedSiteHtml || 'Generated HTML will appear here after using the AI generator or template generator.'}</pre>
+      </section>
+    </div>
+  </Modal>
 }
