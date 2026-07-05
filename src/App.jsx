@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { ROUTES, NAV_TO_ROUTE, navigateHash, currentRoute, isBuildDemoRoute } from './router/routeUtils'
 import { supabase } from './supabase'
 import AuthScreen from './components/AuthScreen'
 import TeamSetup from './components/TeamSetup'
@@ -15,6 +16,7 @@ import { PlaceholderModule } from './features/modules'
 import { TasksView, blankTask, taskService } from './features/tasks'
 import { AppModals } from './features/app'
 import ProspectWorkspace from './features/workspace/ProspectWorkspace'
+import BuildDemoPage from './features/demos/BuildDemoPage'
 import './styles.css'
 
 function App() {
@@ -63,6 +65,7 @@ function App() {
   const [taskSaving, setTaskSaving] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [activeRoute, setActiveRoute] = useState(() => currentRoute())
   const [workspaceLeadId, setWorkspaceLeadId] = useState(null)
 
   const connected = Boolean(supabase)
@@ -88,13 +91,14 @@ function App() {
   function openBuildDemo(lead) {
     const defaultTemplate = lead.category && lead.category !== 'Other' ? lead.category : 'Mobile Detailing'
     setBuildLead(lead)
+    navigateHash(ROUTES.buildDemo)
     setBuildForm({
       template: defaultTemplate,
       style: 'Modern / clean',
       services: lead.notes || '',
       photos: '',
       notes: ''
-    })
+  })
     setBuildBrief('')
     setGeneratedSiteCopy('')
     setGeneratedSiteHtml('')
@@ -190,6 +194,21 @@ function App() {
     return () => window.removeEventListener('keydown', handleGlobalShortcut)
   }, [])
 
+
+  useEffect(() => {
+    function handleRouteChange() {
+      const nextRoute = currentRoute()
+      setActiveRoute(nextRoute)
+      const matchingNav = Object.entries(NAV_TO_ROUTE).find(([, route]) => route === nextRoute)?.[0]
+      if (matchingNav && matchingNav !== activeNav) {
+        setNav(matchingNav)
+      }
+    }
+    window.addEventListener('hashchange', handleRouteChange)
+    handleRouteChange()
+    return () => window.removeEventListener('hashchange', handleRouteChange)
+  }, [activeNav])
+
   async function addTask(e) {
     e.preventDefault()
     if (!taskForm.title.trim() || taskSaving) return
@@ -238,6 +257,7 @@ function App() {
   }
 
   function setNav(nextNav) {
+    if (NAV_TO_ROUTE[nextNav]) navigateHash(NAV_TO_ROUTE[nextNav])
     setActiveNav(nextNav)
     localStorage.setItem('crm_active_nav', nextNav)
     if (nextNav === 'Pipeline') setView('kanban')
@@ -496,7 +516,30 @@ function App() {
       <Toast message={toast} onClose={()=>setToast('')} />
       {message && <div className="notice">{message}</div>}
 
-      {workspaceLead && <ProspectWorkspace
+      {isBuildDemoRoute(activeRoute) && <BuildDemoPage
+        buildLead={buildLead}
+        buildForm={buildForm}
+        setBuildForm={setBuildForm}
+        buildBrief={buildBrief}
+        setBuildBrief={setBuildBrief}
+        generatedSiteCopy={generatedSiteCopy}
+        generatedSiteHtml={generatedSiteHtml}
+        setGeneratedSiteCopy={setGeneratedSiteCopy}
+        setGeneratedSiteHtml={setGeneratedSiteHtml}
+        buildSaving={buildSaving}
+        generateDemoBrief={generateDemoBrief}
+        generateTemplateSite={generateTemplateSite}
+        downloadGeneratedHtml={downloadGeneratedHtml}
+        saveBuildDemo={saveBuildDemo}
+        onBack={() => {
+          setBuildLead(null)
+          setNav('Demo Websites')
+          navigateHash(ROUTES.demoWebsites)
+        }}
+      />}
+
+
+      {!isBuildDemoRoute(activeRoute) && workspaceLead && <ProspectWorkspace
         lead={workspaceLead}
         activeTeamId={activeTeamId}
         tasks={tasks}
@@ -513,7 +556,7 @@ function App() {
         blankTask={blankTask}
       />}
 
-      {!workspaceLead && activeNav === 'Dashboard' && <DashboardView
+      {!isBuildDemoRoute(activeRoute) && !workspaceLead && activeNav === 'Dashboard' && <DashboardView
         leads={leads}
         noWebsite={noWebsite}
         demos={demos}
@@ -525,7 +568,7 @@ function App() {
         setNav={setNav}
       />}
 
-      {showLeadBoard && <LeadBoard
+      {!isBuildDemoRoute(activeRoute) && showLeadBoard && <LeadBoard
         activeNav={activeNav}
         leads={leads}
         noWebsite={noWebsite}
@@ -559,7 +602,7 @@ function App() {
         openWorkspace={(lead)=>setWorkspaceLeadId(lead.id)}
       />}
 
-      {!workspaceLead && activeNav === 'Tasks' && <TasksView
+      {!isBuildDemoRoute(activeRoute) && !workspaceLead && activeNav === 'Tasks' && <TasksView
         tasks={tasks}
         leads={leads}
         query={taskQuery}
@@ -575,7 +618,7 @@ function App() {
         setNav={setNav}
       />}
 
-      {!workspaceLead && !showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
+      {!isBuildDemoRoute(activeRoute) && !workspaceLead && !showLeadBoard && activeNav !== 'Dashboard' && activeNav !== 'Tasks' && <PlaceholderModule activeNav={activeNav} onManageTeam={()=>setShowTeamModal(true)} />}
 
 
     <AppModals

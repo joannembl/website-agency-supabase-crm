@@ -4,3 +4,5 @@ export * as demoBuilder from './demoBuilder'
 export * as demoService from './demoService'
 
 export * as aiDemoService from './aiDemoService'
+
+export { default as BuildDemoPage } from './BuildDemoPage'
